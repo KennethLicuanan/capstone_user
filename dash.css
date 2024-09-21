@@ -1,0 +1,183 @@
+/*navbar*/
+.navbar-nav{
+    margin-left: 60%;
+    font-weight: bold;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+.navbar-brand{
+    font-weight: bold;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+.navbar.custom-color .navbar-brand,
+.navbar.custom-color .nav-link {
+    color: #ffffff !important; /* Set text color to white */
+}
+.custom-color{
+    background-color: rgb(0, 0, 0);
+}
+
+
+/* analytics */
+.analytics-section {
+    padding: 50px 0;
+    background-color: rgb(220, 220, 255);
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+.analytics-bar {
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: left;
+    margin-bottom: 20px;
+    height: 150px;
+    box-shadow: 0 12px 4px rgba(0, 0, 0, 0.1);
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    font-weight: bold;
+    
+}
+
+.analytics-bar h4 {
+    margin-bottom: 15px;
+    font-size: 19px;
+    color: #f0f0f0;
+}
+
+
+
+
+/*user*/
+.navbar-nav{
+    margin-left: 60%;
+    font-weight: bold;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  }
+  .navbar-brand{
+    font-weight: bold;
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+  }
+  .navbar.custom-color .navbar-brand,
+  .navbar.custom-color .nav-link {
+      color: #ffffff !important; /* Set text color to white */
+  }
+  .custom-color{
+      background-color: rgb(0, 0, 0);
+  }
+  
+  /* The side navigation menu */
+  .sidebar {
+      margin: 0;
+      padding: 0;
+      width: 200px;
+      background-color: #f1f1f1;
+      position: fixed;
+      height: 100%;
+      overflow: auto;
+      font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+    }
+    
+    /* Sidebar links */
+    .sidebar a {
+      display: block;
+      color: black;
+      padding: 16px;
+      text-decoration: none;
+    }
+    
+    /* Active/current link */
+    .sidebar a.active img {
+      color: white;
+      margin-left: 45px;
+    }
+
+    .sidebar h4 {
+      text-align: center;
+      font-family: cursive;
+      color: black;
+      font-weight: bold;
+      
+    }
+    
+    /* Links on mouse-over */
+    .sidebar a:hover:not(.active) {
+      background-color: #1000f5;
+      color: white;
+    }
+    
+    /* Page content. The value of the margin-left property should match the value of the sidebar's width property */
+    div.content {
+      margin-left: 200px;
+      padding: 1px 16px;
+      height: 1000px;
+    }
+    
+    /* On screens that are less than 700px wide, make the sidebar into a topbar */
+    @media screen and (max-width: 700px) {
+      .sidebar {
+        width: 100%;
+        height: auto;
+        position: relative;
+      }
+      .sidebar a {float: left;}
+      div.content {margin-left: 0;}
+    }
+    
+    /* On screens that are less than 400px, display the bar vertically, instead of horizontally */
+    @media screen and (max-width: 400px) {
+      .sidebar a {
+        text-align: center;
+        float: none;
+      }
+    }
+  
+  
+    /* Side bar dropdowns */
+    /* Sidebar styling */
+  .sidebar {
+      width: 250px;
+      background-color: #f8f9fa;
+      padding: 10px;
+  }
+  
+  /* Dropdown button styling */
+  .dropbtn {
+      background-color: #f8f9fa;
+      color: black;
+      padding: 10px;
+      text-align: left;
+      width: 100%;
+      border: none;
+      cursor: pointer;
+  }
+  
+  /* Dropdown content (hidden by default) */
+  .dropdown-content {
+      display: none;
+      position: relative;
+      background-color: #f9f9f9;
+      margin-left: 20px;
+      z-index: 1;
+  }
+  
+  /* Links inside the dropdown */
+  .dropdown-content a {
+      color: black;
+      padding: 8px 16px;
+      text-decoration: none;
+      display: block;
+  }
+  
+  /* Change color of dropdown links on hover */
+  .dropdown-content a:hover {
+      background-color: #ddd;
+  }
+  
+  /* Show the dropdown menu on hover */
+  .dropdown:hover .dropdown-content {
+      display: block;
+  }
+  
+  /* Change color of dropdown button on hover */
+  .dropdown:hover .dropbtn {
+      background-color: #ddd;
+  }
