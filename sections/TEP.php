@@ -1,3 +1,94 @@
+<?php
+session_start(); // Start the session
+
+// Check if the user is logged in
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
+// Ensure user_id is set in the session
+if (!isset($_SESSION['user_id'])) {
+    echo '<div class="alert alert-danger">User ID not found. Please log in again.</div>';
+    exit();
+}
+
+// Database connection
+$servername = "localhost";
+$username = "root"; // Use your database username
+$password = ""; // Use your database password
+$dbname = "capstonedb"; // Database name
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+
+// Handle the "Add to Favorites" form submission
+$message = '';
+if (isset($_POST['add_favorite'])) {
+    $studies_id = $_POST['studies_id'];
+    $user_id = $_SESSION['user_id']; // Safe to use now
+
+    // Check if the study is already in favorites
+    $checkStmt = $conn->prepare("SELECT * FROM favorites WHERE user_id = ? AND studies_id = ?");
+    $checkStmt->bind_param("ii", $user_id, $studies_id);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+
+    if ($checkResult->num_rows > 0) {
+        $message = 'This study is already in your favorites.';
+    } else {
+        // Prepare the SQL statement to prevent SQL injection
+        $stmt = $conn->prepare("INSERT INTO favorites (user_id, studies_id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $user_id, $studies_id);
+
+        if ($stmt->execute()) {
+            $message = 'Added to favorites successfully!';
+        } else {
+            $message = 'Error adding to favorites. Please try again.';
+        }
+
+        $stmt->close();
+    }
+    $checkStmt->close();
+}
+
+// Variables for filtering
+$identifier = isset($_POST['identifier']) ? $_POST['identifier'] : '';
+$year = isset($_POST['year']) ? $_POST['year'] : '';
+
+// Fetch studies based on filters
+$sql = "SELECT studies_id, title, author, abstract, keywords, year FROM studiestbl WHERE type = 'TEP'";
+
+if ($identifier) {
+    $sql .= " AND identifier = ?";
+}
+if ($year) {
+    $sql .= " AND year = ?";
+}
+
+// Prepare the statement
+$stmt = $conn->prepare($sql);
+
+// Bind parameters if necessary
+if ($identifier && $year) {
+    $stmt->bind_param("ss", $identifier, $year);
+} elseif ($identifier) {
+    $stmt->bind_param("s", $identifier);
+} elseif ($year) {
+    $stmt->bind_param("s", $year);
+}
+
+// Execute the statement
+$stmt->execute();
+$result = $stmt->get_result();
+$stmt->close();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,7 +96,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digi-Books</title>
     <link rel="stylesheet" href="sections.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f0f0f0;
@@ -76,59 +167,19 @@
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="courseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Courses
-                    </a>
+                    <a class="nav-link dropdown-toggle" href="#" id="courseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Courses</a>
                     <ul class="dropdown-menu" aria-labelledby="courseDropdown">
                         <li><a class="dropdown-item" href="IT.php">College of Computer Studies</a></li>
                         <li><a class="dropdown-item" href="BA.php">Business Administration</a></li>
                         <li><a class="dropdown-item" href="TEP.php">Teachers Education Program</a></li>
                     </ul>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../help.php">Help</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../logout.php">Logout</a>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="../help.php">Help</a></li>
+                <li class="nav-item"><a class="nav-link" href="../logout.php">Logout</a></li>
             </ul>
         </div>
     </div>
 </nav>
-
-<!-- PHP code starts here -->
-<?php
-// Database connection
-$servername = "localhost";
-$username = "root"; // Use your database username
-$password = ""; // Use your database password
-$dbname = "capstonedb"; // Database name
-
-// Create connection
-$conn = new mysqli($servername, $username, $password, $dbname);
-
-// Check connection
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
-}
-
-// Variables for filtering
-$identifier = isset($_POST['identifier']) ? $_POST['identifier'] : '';
-$year = isset($_POST['year']) ? $_POST['year'] : '';
-
-// Fetch studies based on filters
-$sql = "SELECT title, author, abstract, keywords, year FROM studiestbl WHERE type = 'TEP'";
-
-if ($identifier) {
-    $sql .= " AND identifier = '$identifier'";
-}
-
-if ($year) {
-    $sql .= " AND year = '$year'";
-}
-
-$result = $conn->query($sql);
-?>
 
 <section class="filter-section">
     <div class="container">
@@ -170,12 +221,10 @@ $result = $conn->query($sql);
         <h2>Teachers Education Program Studies</h2>
         <div class="row">
             <?php
-            if ($result->num_rows > 0) {
-                // Output data for each study
+            if ($result && $result->num_rows > 0) {
                 while ($row = $result->fetch_assoc()) {
                     $abstract = htmlspecialchars($row['abstract']);
                     $shortAbstract = (strlen($abstract) > 100) ? substr($abstract, 0, 100) . '...' : $abstract;
-                    $fullAbstract = $abstract;
                     ?>
                     <div class="col-md-4 study">
                         <div class="card">
@@ -184,11 +233,17 @@ $result = $conn->query($sql);
                                 <h6 class="card-subtitle mb-2 text-muted">by <?php echo htmlspecialchars($row['author']); ?></h6>
                                 <p class="card-text">
                                     <span class="short-abstract"><?php echo $shortAbstract; ?></span>
-                                    <span class="full-abstract d-none"><?php echo $fullAbstract; ?></span>
-                                    <span class="see-more" data-abstract="<?php echo htmlspecialchars($fullAbstract); ?>">See More</span>
+                                    <span class="full-abstract d-none"><?php echo $abstract; ?></span>
+                                    <span class="see-more">See More</span>
                                 </p>
                                 <p class="card-text"><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
                                 <p class="card-text"><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
+
+                                <!-- Add to Favorites button -->
+                                <form method="POST" action="" style="display:inline;">
+                                    <input type="hidden" name="studies_id" value="<?php echo $row['studies_id']; ?>">
+                                    <button type="submit" name="add_favorite" class="btn btn-primary">Add to Favorites</button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -202,16 +257,16 @@ $result = $conn->query($sql);
     </div>
 </section>
 
-<!-- Modal -->
-<div class="modal fade" id="abstractModal" tabindex="-1" aria-labelledby="abstractModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<!-- Modal for favorite notification -->
+<div class="modal fade" id="favoriteModal" tabindex="-1" aria-labelledby="favoriteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="abstractModalLabel">Abstract</h5>
+                <h5 class="modal-title" id="favoriteModalLabel">Favorite Notification</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="modal-abstract-text"></p>
+                <?php echo $message; ?>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -225,18 +280,32 @@ $conn->close();
 ?>
 
 <script>
-    document.querySelectorAll('.see-more').forEach(function (btn) {
-        btn.addEventListener('click', function () {
-            var abstractText = this.getAttribute('data-abstract');
-            document.getElementById('modal-abstract-text').textContent = abstractText;
+    document.addEventListener('DOMContentLoaded', function () {
+        // Show the modal if there is a message
+        <?php if ($message): ?>
+            var myModal = new bootstrap.Modal(document.getElementById('favoriteModal'));
+            myModal.show();
+        <?php endif; ?>
 
-            // Show the modal
-            var modal = new bootstrap.Modal(document.getElementById('abstractModal'));
-            modal.show();
+        document.querySelectorAll('.see-more').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var shortText = this.previousElementSibling.previousElementSibling;
+                var fullText = this.previousElementSibling;
+
+                if (fullText.classList.contains('d-none')) {
+                    shortText.classList.add('d-none');
+                    fullText.classList.remove('d-none');
+                    this.textContent = 'See Less';
+                } else {
+                    shortText.classList.remove('d-none');
+                    fullText.classList.add('d-none');
+                    this.textContent = 'See More';
+                }
+            });
         });
     });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

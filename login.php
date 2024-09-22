@@ -7,10 +7,6 @@ $username_db = "root";
 $password_db = "";
 $dbname = "capstonedb";
 
-// Default admin credentials
-$admin_username = "admin";
-$admin_password = "admin12345";
-
 // Create a connection
 $conn = new mysqli($servername, $username_db, $password_db, $dbname);
 
@@ -24,19 +20,6 @@ $login_error = ""; // Initialize an empty error message
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
-
-    // Check if the credentials match the hardcoded admin account
-    if ($username === $admin_username && $password === $admin_password) {
-        // Store admin information in session
-        $_SESSION['loggedin'] = true;
-        $_SESSION['username'] = $username;
-        $_SESSION['is_admin'] = true; // Set an admin flag
-
-        
-
-        echo "<script>alert('Login successful! Welcome Administrator...'); window.location.href = 'admin.php';</script>";
-        exit();
-    }
 
     // Prepare and bind
     $stmt = $conn->prepare("SELECT user_id FROM usertbl WHERE credentials = ? AND password = ?");
@@ -56,6 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Store user information in session
         $_SESSION['loggedin'] = true;
         $_SESSION['username'] = $username;
+        $_SESSION['user_id'] = $user_id; // Store user_id in session
 
         // Log user login activity
         $activity = "User logged in";
@@ -81,19 +65,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title>Login</title>
     <style>
         body { 
-        font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; 
-        background-image: url('./imgs/background.jpg'); 
-        background-size: cover; /* Ensures the image covers the entire body */
-        background-repeat: no-repeat; /* Prevents the image from repeating */
-        background-position: center; /* Centers the image */
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; 
+            background-image: url('./imgs/background.jpg'); 
+            background-size: cover; 
+            background-repeat: no-repeat; 
+            background-position: center; 
         }
         .login-container { 
             width: 300px; 
             margin: auto; 
             margin-top: 55px; 
             padding: 20px;
-            box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 20); /* Box shadow */
-            border-radius: 8px; /* Rounded corners */
+            box-shadow: 0 12px 16px 0 rgba(0, 0, 0, 20); 
+            border-radius: 8px; 
             background-color: white;
         }
         input[type=text], input[type=password] { 

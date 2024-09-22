@@ -3,8 +3,13 @@ session_start(); // Start the session
 
 // Check if the user is logged in
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-    // If not logged in, redirect to the login page
     header("Location: login.php");
+    exit();
+}
+
+// Ensure user_id is set in the session
+if (!isset($_SESSION['user_id'])) {
+    echo '<div class="alert alert-danger">User ID not found. Please log in again.</div>';
     exit();
 }
 
@@ -22,12 +27,60 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Handle the "Add to Favorites" form submission
+if (isset($_POST['add_favorite'])) {
+    $studies_id = $_POST['studies_id'];
+    $user_id = $_SESSION['user_id']; // Safe to use now
+
+    // Check if the study is already in favorites
+    $checkStmt = $conn->prepare("SELECT * FROM favorites WHERE user_id = ? AND studies_id = ?");
+    $checkStmt->bind_param("ii", $user_id, $studies_id);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+
+    if ($checkResult->num_rows > 0) {
+        echo '<script>
+                document.addEventListener("DOMContentLoaded", function() {
+                    document.getElementById("modalMessage").textContent = "This study is already in your favorites!";
+                    var myModal = new bootstrap.Modal(document.getElementById("favoriteModal"));
+                    myModal.show();
+                });
+              </script>';
+    } else {
+        // Prepare the SQL statement to prevent SQL injection
+        $stmt = $conn->prepare("INSERT INTO favorites (user_id, studies_id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $user_id, $studies_id);
+
+        if ($stmt->execute()) {
+            echo '<script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        document.getElementById("modalMessage").textContent = "Added to favorites successfully!";
+                        var myModal = new bootstrap.Modal(document.getElementById("favoriteModal"));
+                        myModal.show();
+                    });
+                  </script>';
+        } else {
+            echo '<script>
+                    document.addEventListener("DOMContentLoaded", function() {
+                        document.getElementById("modalMessage").textContent = "Error adding to favorites. Please try again.";
+                        var myModal = new bootstrap.Modal(document.getElementById("favoriteModal"));
+                        myModal.show();
+                    });
+                  </script>';
+        }
+
+        $stmt->close();
+    }
+
+    $checkStmt->close();
+}
+
 // Variables for filtering
 $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : '';
 $year = isset($_POST['year']) ? $_POST['year'] : '';
 
 // Fetch studies based on filters
-$sql = "SELECT title, author, abstract, keywords, year FROM studiestbl WHERE type = 'BSIT'";
+$sql = "SELECT studies_id, title, author, abstract, keywords, year FROM studiestbl WHERE type = 'BSIT'";
 
 if ($identifier) {
     $sql .= " AND identifier = '$identifier'";
@@ -47,7 +100,7 @@ $result = $conn->query($sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digi-Books</title>
     <link rel="stylesheet" href="sections.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
             background-color: #f0f0f0;
@@ -179,7 +232,6 @@ $result = $conn->query($sql);
         <div class="row">
             <?php
             if ($result->num_rows > 0) {
-                // Output data for each study
                 while ($row = $result->fetch_assoc()) {
                     $abstract = htmlspecialchars($row['abstract']);
                     $shortAbstract = (strlen($abstract) > 100) ? substr($abstract, 0, 100) . '...' : $abstract;
@@ -192,12 +244,14 @@ $result = $conn->query($sql);
                                 <h6 class="card-subtitle mb-2 text-muted">by <?php echo htmlspecialchars($row['author']); ?></h6>
                                 <p class="card-text">
                                     <span class="short-abstract"><?php echo $shortAbstract; ?></span>
-                                    <span class="full-abstract d-none"><?php echo $fullAbstract; ?></span>
-                                    <span class="see-more">See More</span>
+                                    <span class="see-more" data-full-abstract="<?php echo htmlspecialchars($fullAbstract); ?>">See More</span>
                                 </p>
                                 <p class="card-text"><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
                                 <p class="card-text"><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
-                                <button>Add to Favorites</button>
+                                <form method="POST" action="" style="display:inline;">
+                                    <input type="hidden" name="studies_id" value="<?php echo $row['studies_id']; ?>">
+                                    <button type="submit" name="add_favorite" class="btn btn-primary">Add to Favorites</button>
+                                </form>
                             </div>
                         </div>
                     </div>
@@ -212,15 +266,15 @@ $result = $conn->query($sql);
 </section>
 
 <!-- Modal -->
-<div class="modal fade" id="abstractModal" tabindex="-1" aria-labelledby="abstractModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+<div class="modal fade" id="favoriteModal" tabindex="-1" aria-labelledby="favoriteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="abstractModalLabel">Abstract</h5>
+                <h5 class="modal-title" id="favoriteModalLabel">Notification</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p id="modal-abstract-text"></p>
+            <div class="modal-body" id="modalMessage">
+                <!-- Message will be injected here -->
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -236,18 +290,14 @@ $conn->close();
 <script>
     document.querySelectorAll('.see-more').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            var fullText = this.previousElementSibling;
-
-            // Set the modal content to the full abstract
-            document.getElementById('modal-abstract-text').textContent = fullText.textContent;
-
-            // Show the modal
-            var modal = new bootstrap.Modal(document.getElementById('abstractModal'));
-            modal.show();
+            var fullAbstract = this.getAttribute('data-full-abstract');
+            document.getElementById('modalMessage').textContent = fullAbstract;
+            var myModal = new bootstrap.Modal(document.getElementById("favoriteModal"));
+            myModal.show();
         });
     });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
