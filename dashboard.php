@@ -43,6 +43,46 @@ while ($row = $typeResult->fetch_assoc()) {
     }
 }
 
+// Fetch notifications
+$notificationsSql = "SELECT message FROM notifications ORDER BY created_at DESC";
+$notificationsResult = $conn->query($notificationsSql);
+$notifications = [];
+
+while ($row = $notificationsResult->fetch_assoc()) {
+    $notifications[] = $row['message'];
+}
+
+// Check for new studies and create notification
+$latestStudySql = "SELECT title, type FROM studiestbl ORDER BY studies_id DESC LIMIT 1";
+$latestStudyResult = $conn->query($latestStudySql);
+
+if ($latestStudyResult->num_rows > 0) {
+    $latestStudy = $latestStudyResult->fetch_assoc();
+    $title = $latestStudy['title'];
+    $type = $latestStudy['type'];
+    $notificationMessage = "New study added: \"$title\" from course \"$type\"";
+
+    // Insert notification if it's not already in the notifications table
+    if (!in_array($notificationMessage, $notifications)) {
+        $insertNotificationSql = "INSERT INTO notifications (message, created_at) VALUES (?, NOW())";
+        $stmt = $conn->prepare($insertNotificationSql);
+        $stmt->bind_param("s", $notificationMessage);
+        $stmt->execute();
+        $stmt->close();
+
+        // Add the new notification to the notifications array for display
+        $notifications[] = $notificationMessage;
+
+        // Check if notifications exceed 10
+        if (count($notifications) > 10) {
+            // Delete the oldest notification
+            $deleteOldestNotificationSql = "DELETE FROM notifications ORDER BY created_at ASC LIMIT 1";
+            $conn->query($deleteOldestNotificationSql);
+        }
+    }
+}
+
+
 $conn->close();
 ?>
 
@@ -122,9 +162,21 @@ $conn->close();
             <li class="nav-item">
               <a class="nav-link" href="favorites.php">Favorites</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="favorites.php">Notification</a>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="clearNotificationCount()">
+                    Notifications <span class="badge bg-danger" id="notificationCount"><?php echo count($notifications); ?></span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                    <?php if (empty($notifications)): ?>
+                        <li><a class="dropdown-item" href="#">No notifications</a></li>
+                    <?php else: ?>
+                        <?php foreach ($notifications as $notification): ?>
+                            <li><a class="dropdown-item" href="#"><?php echo htmlspecialchars($notification); ?></a></li>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </ul>
             </li>
+
             <li class="nav-item">
               <a class="nav-link" href="help.php">Help</a>
             </li>
@@ -175,7 +227,7 @@ $conn->close();
             <!-- Total Studies of BA Program -->
             <div class="col-md-6">
                 <div class="analytics-card">
-                    <h5 class="card-title"><i class="fas fa-briefcase"></i> BUSINESS ADMNISTRATION STUDIES</h5>
+                    <h5 class="card-title"><i class="fas fa-briefcase"></i> BUSINESS ADMINISTRATION STUDIES</h5>
                     <div class="progress">
                         <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo ($typeCounts['BSBA'] / $overallCount) * 100; ?>%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
                     </div>
@@ -185,6 +237,19 @@ $conn->close();
         </div>
     </div>
 </section>
+
+
+
+<script>
+    function clearNotificationCount() {
+        // Set notification count to 0
+        document.getElementById('notificationCount').innerText = '0';
+
+        // Optionally, you can also make an AJAX call to reset the count in the backend if needed.
+        // For example:
+        // fetch('reset_notification_count.php', { method: 'POST' });
+    }
+</script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>

@@ -10,62 +10,58 @@
         body {
             background-color: #f0f0f0;
         }
-
         .study {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
-
         .card {
-            border: none;
+            border: 1px solid black;
             border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
         }
-
         .card:hover {
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
             transform: translateY(-5px);
         }
-
         .card-body {
             padding: 20px;
         }
-
         .card-title {
             font-weight: bold;
-            font-size: 1.3rem;
+            font-size: 1.5rem;
+            color: #333;
+            text-transform: uppercase;
         }
-
         .card-subtitle {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: #6c757d;
+            font-style: italic;
         }
-
         .card-text {
-            font-size: 0.95rem;
+            font-size: 1rem;
+            line-height: 1.5;
         }
-
         .see-more {
             cursor: pointer;
-            color: blue;
+            color: #007bff;
+            font-weight: bold;
         }
-
         .filter-section {
             margin-bottom: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        @media (max-width: 768px) {
-            .card-title {
-                font-size: 1.1rem;
-            }
-
-            .card-subtitle {
-                font-size: 0.9rem;
-            }
-
-            .card-text {
-                font-size: 0.85rem;
-            }
+        .filter-section h2 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        .btn {
+            transition: background-color 0.3s;
+        }
+        .btn:hover {
+            background-color: #0056b3;
         }
     </style>
 </head>
@@ -87,12 +83,6 @@
                         <li><a class="dropdown-item" href="BA.php">Business Administration</a></li>
                         <li><a class="dropdown-item" href="TEP.php">Teachers Education Program</a></li>
                     </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../favorites.php">Favorites</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="../notification.php">Notifications</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="../help.php">Help</a>
@@ -211,6 +201,24 @@ $result = $conn->query($sql);
     </div>
 </section>
 
+<!-- Modal -->
+<div class="modal fade" id="abstractModal" tabindex="-1" aria-labelledby="abstractModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="abstractModalLabel">Abstract</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-abstract-text"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <?php
 $conn->close();
 ?>
@@ -218,18 +226,14 @@ $conn->close();
 <script>
     document.querySelectorAll('.see-more').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            var shortText = this.previousElementSibling.previousElementSibling;
             var fullText = this.previousElementSibling;
-            
-            if (fullText.classList.contains('d-none')) {
-                shortText.classList.add('d-none');
-                fullText.classList.remove('d-none');
-                this.textContent = 'See Less';
-            } else {
-                shortText.classList.remove('d-none');
-                fullText.classList.add('d-none');
-                this.textContent = 'See More';
-            }
+
+            // Set the modal content to the full abstract
+            document.getElementById('modal-abstract-text').textContent = fullText.textContent;
+
+            // Show the modal
+            var modal = new bootstrap.Modal(document.getElementById('abstractModal'));
+            modal.show();
         });
     });
 </script>
