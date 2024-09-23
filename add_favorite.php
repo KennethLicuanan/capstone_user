@@ -29,9 +29,9 @@ $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : '';
 $year = isset($_POST['year']) ? $_POST['year'] : '';
 
 // Fetch favorite studies based on filters for the logged-in user
-$sql = "SELECT s.studies_id, s.title, s.author, s.abstract, s.keywords, s.year
+$sql = "SELECT s.id, s.title, s.author, s.abstract, s.keywords, s.year
         FROM favorites f
-        JOIN studiestbl s ON f.studies_id = s.studies_id
+        JOIN studiestbl s ON f.id = s.id
         WHERE f.user_id = ?";
 
 if ($identifier) {

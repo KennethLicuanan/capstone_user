@@ -29,12 +29,12 @@ if ($conn->connect_error) {
 
 // Handle the "Add to Favorites" form submission
 if (isset($_POST['add_favorite'])) {
-    $studies_id = $_POST['studies_id'];
+    $id = $_POST['id'];
     $user_id = $_SESSION['user_id']; // Safe to use now
 
     // Check if the study is already in favorites
-    $checkStmt = $conn->prepare("SELECT * FROM favorites WHERE user_id = ? AND studies_id = ?");
-    $checkStmt->bind_param("ii", $user_id, $studies_id);
+    $checkStmt = $conn->prepare("SELECT * FROM favorites WHERE user_id = ? AND id = ?");
+    $checkStmt->bind_param("ii", $user_id, $id);
     $checkStmt->execute();
     $checkResult = $checkStmt->get_result();
 
@@ -48,8 +48,8 @@ if (isset($_POST['add_favorite'])) {
               </script>';
     } else {
         // Prepare the SQL statement to prevent SQL injection
-        $stmt = $conn->prepare("INSERT INTO favorites (user_id, studies_id) VALUES (?, ?)");
-        $stmt->bind_param("ii", $user_id, $studies_id);
+        $stmt = $conn->prepare("INSERT INTO favorites (user_id, id) VALUES (?, ?)");
+        $stmt->bind_param("ii", $user_id, $id);
 
         if ($stmt->execute()) {
             echo '<script>
@@ -80,7 +80,7 @@ $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : '';
 $year = isset($_POST['year']) ? $_POST['year'] : '';
 
 // Fetch studies based on filters
-$sql = "SELECT studies_id, title, author, abstract, keywords, year FROM studiestbl WHERE type = 'BSIT'";
+$sql = "SELECT id, title, author, abstract, keywords, year FROM studiestbl WHERE type = 'BSIT'";
 
 if ($identifier) {
     $sql .= " AND identifier = '$identifier'";
@@ -249,7 +249,7 @@ $result = $conn->query($sql);
                                 <p class="card-text"><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
                                 <p class="card-text"><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
                                 <form method="POST" action="" style="display:inline;">
-                                    <input type="hidden" name="studies_id" value="<?php echo $row['studies_id']; ?>">
+                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
                                     <button type="submit" name="add_favorite" class="btn btn-primary">Add to Favorites</button>
                                 </form>
                             </div>

@@ -53,7 +53,7 @@ while ($row = $notificationsResult->fetch_assoc()) {
 }
 
 // Check for new studies and create notification
-$latestStudySql = "SELECT title, type FROM studiestbl ORDER BY studies_id DESC LIMIT 1";
+$latestStudySql = "SELECT title, type FROM studiestbl ORDER BY id DESC LIMIT 1";
 $latestStudyResult = $conn->query($latestStudySql);
 
 if ($latestStudyResult->num_rows > 0) {
