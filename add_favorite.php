@@ -97,54 +97,52 @@ while ($row = $notificationsResult->fetch_assoc()) {
     </style>
 </head>
 <body>
-
 <nav class="navbar navbar-expand-lg custom-color">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="./dashboard.php"><img src="imgs/book.png" height="70" alt=""> DIGI - BOOKS</a>
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/dashboard.php"><img src="imgs/book.png" height="70" alt=""> DIGI - BOOKS</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
+          <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
-            <ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="courseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Courses
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="courseDropdown">
-                        <li><a class="dropdown-item" href="./sections/IT.php">College of Computer Studies</a></li>
-                        <li><a class="dropdown-item" href="./sections/BA.php">Business Administration</a></li>
-                        <li><a class="dropdown-item" href="./sections/TEP.php">Teachers Education Program</a></li>
-                    </ul>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="add_favorite.php">Favorites</a>
-                </li>
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="clearNotificationCount()">
-                        Notifications <span class="badge bg-danger" id="notificationCount"><?php echo count($notifications); ?></span>
-                    </a>
-                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
-                        <?php if (empty($notifications)): ?>
-                            <li><a class="dropdown-item" href="#">No notifications</a></li>
-                        <?php else: ?>
-                            <?php foreach ($notifications as $notification): ?>
-                                <li><a class="dropdown-item" href="#"><?php echo htmlspecialchars($notification); ?></a></li>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </ul>
-                </li>
+          <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="courseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Courses
+              </a>
+              <ul class="dropdown-menu" aria-labelledby="courseDropdown">
+                <li><a class="dropdown-item" href="./sections/IT.php">College of Computer Studies</a></li>
+                <li><a class="dropdown-item" href="./sections/BA.php">Business Administration</a></li>
+                <li><a class="dropdown-item" href="./sections/TEP.php">Teachers Education Program</a></li>
+              </ul>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="add_favorite.php">Favorites</a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" onclick="clearNotificationCount()">
+                    Notifications <span class="badge bg-danger" id="notificationCount"><?php echo count($notifications); ?></span>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="notificationDropdown">
+                    <?php if (empty($notifications)): ?>
+                        <li><a class="dropdown-item" href="#">No notifications</a></li>
+                    <?php else: ?>
+                        <?php foreach ($notifications as $notification): ?>
+                            <li><a class="dropdown-item" href="#"><?php echo htmlspecialchars($notification); ?></a></li>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </ul>
+            </li>
 
-                <li class="nav-item">
-                    <a class="nav-link" href="help.php">Help</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="logout.php">Logout</a>
-                </li>
-            </ul>
+            <li class="nav-item">
+              <a class="nav-link" href="help.php">Help</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="logout.php">Logout</a>
+            </li>
+          </ul>
         </div>
-    </div>
-</nav>
-
+      </div>
+    </nav>
 <!-- Filter Section -->
 <section class="filter-section">
     <div class="container">
@@ -243,7 +241,6 @@ while ($row = $notificationsResult->fetch_assoc()) {
     });
 </script>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>

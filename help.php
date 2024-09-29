@@ -82,7 +82,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
               </ul>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="favorites.php">Favorites</a>
+              <a class="nav-link" href="./add_favorite.php">Favorites</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="help.php">Help</a>
@@ -100,9 +100,11 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         <ul>
             <li>You can press the "Courses" dropdown to see the studies of each course.</li>
             <li>Each course is categorized by year.</li>
-            <li>You can use the search feature to narrow down your search for specific studies.</li>
+            <li>You can use the filtering feature to narrow down your search for specific studies.</li>
             <li>Use keywords to find specific studies quickly.</li>
             <li>Uploaded studies are available from the years 2019 to 2024.</li>
+            <li>You can add your favorite studies. And view it on the favorite section.</li>
+            <li>You can navigate back to dashboard by clicking the word "Digi-Books".</li>
         </ul>
     </div>
 
