@@ -75,11 +75,12 @@ if (isset($_POST['add_favorite'])) {
     $checkStmt->close();
 }
 
-// Variables for filtering
+// Variables for filtering and search
 $identifier = isset($_POST['identifier']) ? $_POST['identifier'] : '';
 $year = isset($_POST['year']) ? $_POST['year'] : '';
+$search = isset($_POST['search']) ? $_POST['search'] : '';
 
-// Fetch studies based on filters
+// Fetch studies based on filters and search
 $sql = "SELECT id, title, author, abstract, keywords, year FROM studiestbl WHERE type = 'BSBA'";
 
 if ($identifier) {
@@ -88,6 +89,10 @@ if ($identifier) {
 
 if ($year) {
     $sql .= " AND year = '$year'";
+}
+
+if ($search) {
+    $sql .= " AND (title LIKE '%$search%' OR author LIKE '%$search%' OR keywords LIKE '%$search%')";
 }
 
 $result = $conn->query($sql);
@@ -105,8 +110,23 @@ $result = $conn->query($sql);
         body {
             background-color: #f0f0f0;
         }
-        .study {
-            margin-bottom: 30px;
+        /* Main layout */
+        .page-container {
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        /* Sidebar specifically for filtering options */
+        .filter-sidebar {
+            width: 250px;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-right: 20px;
+        }
+        /* Main content */
+        .main-content {
+            flex-grow: 1;
         }
         .card {
             border: 1px solid black;
@@ -141,26 +161,10 @@ $result = $conn->query($sql);
             color: #007bff;
             font-weight: bold;
         }
-        .filter-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .filter-section h2 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-        }
-        .btn {
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #0056b3;
-        }
     </style>
 </head>
 <body>
+
 <nav class="navbar navbar-expand-lg custom-color">
     <div class="container-fluid">
         <a class="navbar-brand" href="../dashboard.php"><img src="imgs/book.png" height="70" alt=""> DIGI - BOOKS</a>
@@ -190,11 +194,17 @@ $result = $conn->query($sql);
     </div>
 </nav>
 
-<section class="filter-section">
-    <div class="container">
+<div class="page-container">
+    <aside class="filter-sidebar">
         <form method="POST" action="">
+            <!-- Search Box -->
+            <div class="mb-3">
+                <label for="search" class="form-label">Search</label>
+                <input type="text" name="search" id="search" class="form-control" placeholder="Search by title, author, or keywords" value="<?php echo htmlspecialchars($search); ?>">
+            </div>
+            
+            <!-- Filter by Identifier -->
             <div class="row mb-3">
-                <div class="col-md-4">
                     <label for="identifier" class="form-label">Filter by Identifier</label>
                     <select name="identifier" id="identifier" class="form-select">
                         <option value="">Select Identifier</option>
@@ -203,78 +213,77 @@ $result = $conn->query($sql);
                         <option value="Financial Management" <?php if ($identifier === 'Financial Management') echo 'selected'; ?>>Financial Management</option>
                     </select>
                 </div>
-                <div class="col-md-4">
-                    <label for="year" class="form-label">Filter by Year</label>
-                    <select name="year" id="year" class="form-select">
-                        <option value="">Select Year</option>
-                        <?php
-                        // Fetch distinct years from the studiestbl
-                        $yearSql = "SELECT DISTINCT year FROM studiestbl ORDER BY year DESC";
-                        $yearResult = $conn->query($yearSql);
-                        while ($yearRow = $yearResult->fetch_assoc()) {
-                            echo '<option value="' . $yearRow['year'] . '"' . ($year == $yearRow['year'] ? ' selected' : '') . '>' . $yearRow['year'] . '</option>';
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Filter</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</section>
-
-<section class="first">
-    <div class="container">
-        <h2>Business Administration Studies</h2>
-        <div class="row">
-            <?php
-            if ($result->num_rows > 0) {
-                while ($row = $result->fetch_assoc()) {
-                    $abstract = htmlspecialchars($row['abstract']);
-                    $shortAbstract = (strlen($abstract) > 100) ? substr($abstract, 0, 100) . '...' : $abstract;
-                    $fullAbstract = $abstract;
+            
+            <!-- Filter by Year -->
+            <div class="mb-3">
+                <label for="year" class="form-label">Filter by Year</label>
+                <select name="year" id="year" class="form-select">
+                    <option value="">Select Year</option>
+                    <?php
+                    // Fetch distinct years from the studiestbl
+                    $yearSql = "SELECT DISTINCT year FROM studiestbl ORDER BY year DESC";
+                    $yearResult = $conn->query($yearSql);
+                    while ($yearRow = $yearResult->fetch_assoc()) {
+                        echo '<option value="' . $yearRow['year'] . '"' . ($year == $yearRow['year'] ? ' selected' : '') . '>' . $yearRow['year'] . '</option>';
+                    }
                     ?>
-                    <div class="col-md-4 study">
-                        <div class="card">
-                            <div class="card-body">
-                                <h5 class="card-title"><?php echo htmlspecialchars($row['title']); ?></h5>
-                                <h6 class="card-subtitle mb-2 text-muted">by <?php echo htmlspecialchars($row['author']); ?></h6>
-                                <p class="card-text">
-                                    <span class="short-abstract"><?php echo $shortAbstract; ?></span>
-                                    <span class="full-abstract d-none"><?php echo $fullAbstract; ?></span>
-                                    <span class="see-more">See More</span>
-                                </p>
-                                <p class="card-text"><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
-                                <p class="card-text"><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
-                                <form method="POST" action="" style="display:inline;">
-                                    <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-                                    <button type="submit" name="add_favorite" class="btn btn-primary">Add to Favorites</button>
-                                </form>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </aside>
+
+    <section class="main-content">
+        <div class="container"><br>
+            <div class="row">
+                <?php
+                if ($result->num_rows > 0) {
+                    while ($row = $result->fetch_assoc()) {
+                        $abstract = htmlspecialchars($row['abstract']);
+                        $shortAbstract = (strlen($abstract) > 100) ? substr($abstract, 0, 100) . '...' : $abstract;
+                        $fullAbstract = $abstract;
+                        ?>
+                        <div class="col-md-4 study">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title"><?php echo htmlspecialchars($row['title']); ?></h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">by <?php echo htmlspecialchars($row['author']); ?></h6>
+                                    <p class="card-text">
+                                        <span class="short-abstract"><?php echo $shortAbstract; ?></span>
+                                        <span class="see-more" data-full-abstract="<?php echo htmlspecialchars($fullAbstract); ?>">See More</span>
+                                    </p>
+                                    <p class="card-text"><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
+                                    <p class="card-text"><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
+                                    <form method="POST" action="" style="display:inline;">
+                                        <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
+                                        <button type="submit" name="add_favorite" class="btn btn-primary">Add to Favorites</button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <?php
+                        <?php
+                    }
+                } else {
+                    echo '<p>No studies available for the selected criteria.</p>';
                 }
-            } else {
-                echo '<p>No studies available for the selected criteria.</p>';
-            }
-            ?>
+                ?>
+            </div>
         </div>
-    </div>
-</section>
+    </section>
+</div>
 
-<!-- Modal -->
+
+<!-- Modal for displaying messages -->
 <div class="modal fade" id="favoriteModal" tabindex="-1" aria-labelledby="favoriteModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="favoriteModalLabel">Notification</h5>
+                <h5 class="modal-title" id="favoriteModalLabel">Abstract</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="modalMessage">
-                <!-- Message will be injected here -->
+            <div class="modal-body">
+                <p id="modalMessage"></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -283,24 +292,21 @@ $result = $conn->query($sql);
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<?php
+$conn->close();
+?>
+
 <script>
     document.querySelectorAll('.see-more').forEach(function (btn) {
         btn.addEventListener('click', function () {
-            var shortText = this.previousElementSibling.previousElementSibling;
-            var fullText = this.previousElementSibling;
-
-            if (fullText.classList.contains('d-none')) {
-                shortText.classList.add('d-none');
-                fullText.classList.remove('d-none');
-                this.textContent = 'See Less';
-            } else {
-                shortText.classList.remove('d-none');
-                fullText.classList.add('d-none');
-                this.textContent = 'See More';
-            }
+            var fullAbstract = this.getAttribute('data-full-abstract');
+            document.getElementById('modalMessage').textContent = fullAbstract;
+            var myModal = new bootstrap.Modal(document.getElementById("favoriteModal"));
+            myModal.show();
         });
     });
 </script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
