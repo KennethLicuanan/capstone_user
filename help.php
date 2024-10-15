@@ -65,7 +65,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 <body>
     <nav class="navbar navbar-expand-lg custom-color">
       <div class="container-fluid">
-        <a class="navbar-brand" href="./dashboard.php"><img src="imgs/book.png" height="70" alt=""> DIGI - BOOKS</a>
+        <a class="navbar-brand" href="./dashboard.php"><img src="imgs/book.png" height="70" alt=""> Digi - Studies</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>

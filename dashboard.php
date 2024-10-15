@@ -91,7 +91,7 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digi-Books</title>
+    <title>Digi-Studies</title>
     <link rel="stylesheet" href="dash.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -143,7 +143,7 @@ $conn->close();
 <body>
     <nav class="navbar navbar-expand-lg custom-color">
       <div class="container-fluid">
-        <a class="navbar-brand" href="/dashboard.php"><img src="imgs/book.png" height="70" alt=""> DIGI - BOOKS</a>
+        <a class="navbar-brand" href="dashboard.php"><img src="imgs/book.png" height="70" alt=""> Digi - Studies</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -191,52 +191,59 @@ $conn->close();
     <section class="analytics-section">
     <div class="container">
         <div class="row">
-            <!-- Total Research Studies -->
-            <div class="col-md-6">
-                <div class="analytics-card">
-                    <h5 class="card-title"><i class="fas fa-book"></i> TOTAL RESEARCH STUDIES</h5>
-                    <div class="progress">
-                        <div class="progress-bar bg-primary" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                <!-- Total Research Studies -->
+                <div class="col-md-6">
+                    <div class="analytics-card">
+                        <h5 class="card-title"><i class="fas fa-book"></i> TOTAL RESEARCH STUDIES</h5>
+                        <div class="progress">
+                            <div class="progress-bar bg-primary" role="progressbar" style="width: 100%;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-count"><?php echo $overallCount; ?> studies available</div>
                     </div>
-                    <div class="text-count"><?php echo $overallCount; ?> studies available</div>
                 </div>
-            </div>
 
             <!-- Total Studies of BSIT Program -->
             <div class="col-md-6">
-                <div class="analytics-card">
-                    <h5 class="card-title"><i class="fas fa-laptop-code"></i> COLLEGE OF COMPUTER STUDIES</h5>
-                    <div class="progress">
-                        <div class="progress-bar bg-success" role="progressbar" style="width: <?php echo ($typeCounts['BSIT'] / $overallCount) * 100; ?>%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <a href="./sections/IT.php?type=BSIT" class="text-decoration-none">
+                    <div class="analytics-card">
+                        <h5 class="card-title"><i class="fas fa-laptop-code"></i> COLLEGE OF COMPUTER STUDIES</h5>
+                        <div class="progress">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: <?php echo ($typeCounts['BSIT'] / $overallCount) * 100; ?>%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-count"><?php echo $typeCounts['BSIT']; ?> new studies</div>
                     </div>
-                    <div class="text-count"><?php echo $typeCounts['BSIT']; ?> new studies</div>
-                </div>
+                </a>
             </div>
 
             <!-- Total Studies of TEP Program -->
             <div class="col-md-6">
-                <div class="analytics-card">
-                    <h5 class="card-title"><i class="fas fa-graduation-cap"></i> TEACHERS EDUCATION PROGRAM</h5>
-                    <div class="progress">
-                        <div class="progress-bar bg-info" role="progressbar" style="width: <?php echo ($typeCounts['TEP'] / $overallCount) * 100; ?>%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <a href="./sections/TEP.php?type=TEP" class="text-decoration-none">
+                    <div class="analytics-card">
+                        <h5 class="card-title"><i class="fas fa-graduation-cap"></i> TEACHERS EDUCATION PROGRAM</h5>
+                        <div class="progress">
+                            <div class="progress-bar bg-info" role="progressbar" style="width: <?php echo ($typeCounts['TEP'] / $overallCount) * 100; ?>%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-count"><?php echo $typeCounts['TEP']; ?> new studies</div>
                     </div>
-                    <div class="text-count"><?php echo $typeCounts['TEP']; ?> new studies</div>
-                </div>
+                </a>
             </div>
 
             <!-- Total Studies of BA Program -->
             <div class="col-md-6">
-                <div class="analytics-card">
-                    <h5 class="card-title"><i class="fas fa-briefcase"></i> BUSINESS ADMINISTRATION STUDIES</h5>
-                    <div class="progress">
-                        <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo ($typeCounts['BSBA'] / $overallCount) * 100; ?>%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                <a href="./sections/BA.php?type=BSBA" class="text-decoration-none">
+                    <div class="analytics-card">
+                        <h5 class="card-title"><i class="fas fa-briefcase"></i> BUSINESS ADMINISTRATION STUDIES</h5>
+                        <div class="progress">
+                            <div class="progress-bar bg-warning" role="progressbar" style="width: <?php echo ($typeCounts['BSBA'] / $overallCount) * 100; ?>%;" aria-valuenow="10" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <div class="text-count"><?php echo $typeCounts['BSBA']; ?> new studies</div>
                     </div>
-                    <div class="text-count"><?php echo $typeCounts['BSBA']; ?> new studies</div>
-                </div>
+                </a>
             </div>
         </div>
     </div>
 </section>
+
 
 
 

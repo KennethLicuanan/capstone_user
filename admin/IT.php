@@ -81,7 +81,7 @@ $year = isset($_POST['year']) ? $_POST['year'] : '';
 $search = isset($_POST['search']) ? $_POST['search'] : '';
 
 // Fetch studies based on filters and search
-$sql = "SELECT id, title, author, abstract, keywords, year FROM studiestbl WHERE type = 'TEP'";
+$sql = "SELECT id, title, author, abstract, keywords, year FROM studiestbl WHERE type = 'BSIT'";
 
 if ($identifier) {
     $sql .= " AND identifier = '$identifier'";
@@ -129,15 +129,11 @@ $result = $conn->query($sql);
         .main-content {
             flex-grow: 1;
         }
-        .study {
-            margin-bottom: 30px;
-        }
         .card {
             border: 1px solid black;
             border-radius: 15px;
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
             transition: all 0.3s ease;
-            margin: 10px;
         }
         .card:hover {
             box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
@@ -166,44 +162,34 @@ $result = $conn->query($sql);
             color: #007bff;
             font-weight: bold;
         }
-        .filter-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        .filter-section h2 {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-        }
-        .btn {
-            transition: background-color 0.3s;
-        }
-        .btn:hover {
-            background-color: #0056b3;
-        }
     </style>
 </head>
 <body>
+
 <nav class="navbar navbar-expand-lg custom-color">
     <div class="container-fluid">
-        <a class="navbar-brand" href="../dashboard.php"><img src="imgs/book.png" height="70" alt=""> Digi - Studies</a>
+        <a class="navbar-brand" href="../admin.php"><img src="imgs/book.png" height="70" alt=""> Digi - Studies Administrator</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNavDropdown">
             <ul class="navbar-nav">
                 <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="courseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">Courses</a>
+                    <a class="nav-link dropdown-toggle" href="#" id="courseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Courses
+                    </a>
                     <ul class="dropdown-menu" aria-labelledby="courseDropdown">
                         <li><a class="dropdown-item" href="IT.php">College of Computer Studies</a></li>
                         <li><a class="dropdown-item" href="BA.php">Business Administration</a></li>
                         <li><a class="dropdown-item" href="TEP.php">Teachers Education Program</a></li>
                     </ul>
                 </li>
-                <li class="nav-item"><a class="nav-link" href="../help.php">Help</a></li>
-                <li class="nav-item"><a class="nav-link" href="../logout.php">Logout</a></li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../help.php">Help</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="../logout.php">Logout</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -219,15 +205,16 @@ $result = $conn->query($sql);
             </div>
             
             <!-- Filter by Identifier -->
-             <div class="row mb-3">
-                    <label for="identifier" class="form-label">Filter by Identifier</label>
-                    <select name="identifier" id="identifier" class="form-select">
-                        <option value="">Select Identifier</option>
-                        <option value="Early Childhood Education" <?php if ($identifier === 'Early Childhood Education') echo 'selected'; ?>>Early Childhood Education</option>
-                        <option value="Secondary Education" <?php if ($identifier === 'Secondary Education') echo 'selected'; ?>>Secondary Education</option>
-                        <option value="Elementary Education" <?php if ($identifier === 'Elementary Education') echo 'selected'; ?>>Elementary Education</option>
-                    </select>
-                </div>
+            <div class="mb-3">
+                <label for="identifier" class="form-label">Filter by Type</label>
+                <select name="identifier" id="identifier" class="form-select">
+                    <option value="">Select Type</option>
+                    <option value="WEB-BASED" <?php if ($identifier === 'WEB-BASED') echo 'selected'; ?>>WEB-BASED</option>
+                    <option value="WEB-APP" <?php if ($identifier === 'WEB-APP') echo 'selected'; ?>>WEB-APP</option>
+                    <option value="MOBILE APP" <?php if ($identifier === 'MOBILE APP') echo 'selected'; ?>>MOBILE APP</option>
+                    <option value="IOT" <?php if ($identifier === 'IOT') echo 'selected'; ?>>IOT</option>
+                </select>
+            </div>
             
             <!-- Filter by Year -->
             <div class="mb-3">
