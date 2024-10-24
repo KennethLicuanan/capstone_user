@@ -132,7 +132,7 @@ $conn->close();
         <a href="add.php"><i class="fas fa-plus"></i> Add Study</a>
         <a href="manage.php"><i class="fas fa-tasks"></i> Manage Studies</a>
         <a href="user.php"><i class="fas fa-users"></i> User Logs</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
     
 <div class="content">
