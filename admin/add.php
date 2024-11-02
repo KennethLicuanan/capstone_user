@@ -49,6 +49,8 @@ $conn->close();
     <link rel="stylesheet" href="../admin.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+
     <style>
         body {
             background-color: #ffffff;
@@ -117,6 +119,27 @@ $conn->close();
         .sidebar .sidebar-brand img {
             border-radius: 50%;
         }
+        /* Adjusting modal body for better layout */
+.modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+/* Optional: Add a specific size for the cropped image preview */
+#capturedImage {
+    max-width: 100%; /* Keep it responsive */
+    width: 600px; /* Set a specific width */
+    height: auto; /* Maintain aspect ratio */
+    margin-top: 10px;
+}
+
+
+/* Optional: Add max-height for video and image in the modal */
+#cameraFeed, #capturedImage {
+    max-height: 300px; /* Set the maximum height */
+    width: auto; /* Maintain aspect ratio */
+}
+
     </style>
 </head>
 <body>
@@ -211,6 +234,54 @@ $conn->close();
                 <input type="file" id="studyPhoto" accept="image/*" class="form-control" onchange="previewPhoto()">
                 <img id="photoPreview" class="img-preview" src="#" alt="Photo Preview" style="display:none;">
             </div>
+            
+            <!-- Modal for Image Source Selection -->
+<div class="modal fade" id="imageSourceModal" tabindex="-1" aria-labelledby="imageSourceModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageSourceModalLabel">Select Image Source</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <button type="button" class="btn btn-primary w-100 mb-2" onclick="startCamera()">Use Camera</button>
+                <button type="button" class="btn btn-secondary w-100" onclick="chooseFromGallery()">Choose from Gallery</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Camera Live Feed -->
+<div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cameraModalLabel">Camera Live Feed</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <video id="cameraFeed" width="100%" autoplay></video>
+                <button type="button" class="btn btn-success mt-2" onclick="captureImage()">Capture</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Image Cropping -->
+<div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cropModalLabel">Crop Image</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="capturedImage" alt="Captured Image" style="max-width: 100%;" />
+                <button type="button" class="btn btn-primary mt-2" onclick="confirmCrop()">Confirm Crop</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 
             <button id="addStudyButton" class="btn btn-primary" onclick="addStudy()" data-bs-toggle="popover" title="Success" data-bs-content="Study added successfully!">Add Study</button>
@@ -218,11 +289,12 @@ $conn->close();
     </div>
 </div>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
         const programOptions = {
-            IT: ['Thesis', 'Capstone Project', 'Research Paper'],
-            BA: ['Business Plan', 'Feasibility Study', 'Case Study'],
-            TEP: ['Lesson Plan', 'Research', 'Case Study']
+            IT: ['IoT', 'Web-Based', 'Web-Application','Mobile Application'],
+            BA: ['Financial Management', 'Operations Management', 'Marketing Management'],
+            TEP: ['Early Childhood', 'Seconrady Education', 'Elementary Education']
         };
 
         document.getElementById('course').addEventListener('change', function() {
@@ -243,10 +315,115 @@ $conn->close();
                 programSelect.appendChild(defaultOption);
             }
         });
-        // Function to trigger file input click
-        function triggerFileInput(inputId) {
-            document.getElementById(inputId).click();
+
+
+// Track the input field currently being edited
+let currentInputId = null;
+let cropper;
+
+
+// Open modal to select image source
+function triggerFileInput(inputId) {
+    currentInputId = inputId;
+    const modal = new bootstrap.Modal(document.getElementById('imageSourceModal'));
+    modal.show();
+}
+
+// Start the camera and set a lower resolution
+function startCamera() {
+    navigator.mediaDevices.getUserMedia({
+        video: {
+            width: { ideal: 640 }, // Lower resolution for better performance
+            height: { ideal: 480 }
         }
+    })
+    .then((stream) => {
+        const video = document.getElementById('cameraFeed');
+        video.srcObject = stream;
+        video.play();
+
+        const cameraModal = new bootstrap.Modal(document.getElementById('cameraModal'));
+        cameraModal.show();
+
+        // Stop the camera stream when the modal is hidden
+        document.getElementById('cameraModal').addEventListener('hidden.bs.modal', () => {
+            stream.getTracks().forEach(track => track.stop());
+        });
+    })
+    .catch((error) => {
+        alert('Unable to access camera. Please check your device settings.');
+        console.error('Camera access error:', error);
+    });
+}
+
+
+// Capture image and display it in the cropper
+function captureImage() {
+    const video = document.getElementById('cameraFeed');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    const context = canvas.getContext('2d');
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const imageDataUrl = canvas.toDataURL('image/png');
+    document.getElementById('capturedImage').src = imageDataUrl;
+
+    // Open the cropping modal
+    const cropModal = new bootstrap.Modal(document.getElementById('cropModal'));
+    cropModal.show();
+
+    // Initialize Cropper.js on the captured image
+    if (cropper) cropper.destroy(); // Destroy previous cropper instance if any
+    const image = document.getElementById('capturedImage');
+    cropper = new Cropper(image, {
+        aspectRatio: NaN,
+        viewMode: 1,
+    });
+}
+
+// Confirm crop and recognize text
+function confirmCrop() {
+    const canvas = cropper.getCroppedCanvas();
+
+    // Convert the cropped image to a data URL for Tesseract
+    const croppedImageData = canvas.toDataURL('image/png');
+    recognizeTextFromImageData(croppedImageData);
+
+    // Hide the crop modal
+    const cropModal = bootstrap.Modal.getInstance(document.getElementById('cropModal'));
+    cropModal.hide();
+}
+
+// Text recognition with Tesseract.js
+function recognizeTextFromImageData(imageData) {
+    Tesseract.recognize(imageData, 'eng', {
+        logger: (m) => console.log(m),
+    })
+    .then(({ data: { text } }) => {
+        const cleanedText = text.trim().replace(/[\n\r]+/g, " ");
+        if (cleanedText) {
+            document.getElementById(currentInputId).value = cleanedText;
+        } else {
+            alert("No text detected in the image. Please ensure the image is clear and try again.");
+        }
+    })
+    .catch((error) => {
+        console.error('Text recognition error:', error);
+        alert("Text recognition failed. Try improving the image clarity and lighting.");
+    });
+}
+
+
+
+// Function to use the gallery instead of the camera
+function chooseFromGallery() {
+    document.getElementById(currentInputId).removeAttribute('capture'); 
+    document.getElementById(currentInputId).click(); 
+    const modal = bootstrap.Modal.getInstance(document.getElementById('imageSourceModal'));
+    modal.hide();
+}
 
         function recognizeText(inputId, fieldId) {
     const imageInput = document.getElementById(inputId);
@@ -368,6 +545,7 @@ $conn->close();
             console.error('Error:', error);
         });
     }
+
 
 
     </script>

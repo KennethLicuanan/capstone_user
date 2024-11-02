@@ -22,45 +22,59 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         body {
           background-color: #eeeeee;
         }
-        .instructions {
-          margin: 30px auto;
-          padding: 30px;
-          background-color: #ffffff;
-          border-radius: 15px;
-          box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-          max-width: 800px;
-          text-align: center;
-          animation: fadeIn 1s ease-in-out;
-        }
-        .instructions h3 {
-          color: #2c3e50;
-          font-weight: bold;
-          margin-bottom: 20px;
-          font-size: 28px;
-        }
-        .instructions ul {
-          list-style-type: none;
-          padding: 0;
-        }
-        .instructions ul li {
-          margin: 10px 0;
-          font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-          font-size: 18px;
-          font-weight: bold;
-          color: #34495e;
-          padding: 10px;
-          background-color: #ecf0f1;
-          border-radius: 8px;
-          transition: transform 0.2s;
-        }
-        .instructions ul li:hover {
-          transform: scale(1.05);
-          background-color: #d0dff0;
-        }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
+            /* General instructions container style */
+    .instructions {
+        margin: 30px auto;
+        padding: 30px;
+        background-color: #f5f7fa;
+        border-radius: 8px;
+        max-width: 800px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        text-align: left;
+        color: #333;
+    }
+
+    /* Title styling */
+    .instructions h3 {
+        color: #2c3e50;
+        font-weight: bold;
+        font-size: 26px;
+        margin-bottom: 15px;
+        text-align: center;
+        border-bottom: 2px solid #d1d5db;
+        padding-bottom: 10px;
+    }
+
+    /* List styling */
+    .instructions ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    /* List items styling */
+    .instructions ul li {
+        display: flex;
+        align-items: flex-start;
+        margin: 15px 0;
+        font-size: 18px;
+        line-height: 1.6;
+        color: #555;
+        font-weight: bold;
+    }
+
+    /* Icon for each list item */
+    .instructions ul li::before {
+        content: '\f05a'; /* Font Awesome info-circle icon */
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        color: #2d9cdb;
+        margin-right: 10px;
+    }
+
+    /* Text adjustments */
+    .instructions ul li span {
+        flex: 1;
+    }
 
         
         .sidebar {
@@ -96,6 +110,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         .sidebar .sidebar-brand img {
             border-radius: 50%;
         }
+        content{
+          
+        }
     </style>
 </head>
 <body>
@@ -109,23 +126,24 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         <a href="./sections/BA.php"><i class="fas fa-briefcase"></i> Business sectionsistration</a>
         <a href="./sections/TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
         <a href="add_favorite.php"><i class="fas fa-star"></i> Favorites</a>
-        <a href="#"><i class="fas fa-bell"></i> Notifications</a>
+        <a href="notification.php"><i class="fas fa-bell"></i> Notifications</a>
         <a href="help.php"><i class="fas fa-pencil"></i> Help</a>
         <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
 <div class="content">
-    <div class="container instructions">
-        <h3>How to Use Digi-Books</h3>
-        <ul>
-            <li>You can press the "Courses" dropdown to see the studies of each course.</li>
-            <li>Each course is categorized by year.</li>
-            <li>You can use the filtering feature to narrow down your search for specific studies.</li>
-            <li>Use keywords to find specific studies quickly.</li>
-            <li>Uploaded studies are available from the years 2019 to 2024.</li>
-            <li>You can add your favorite studies. And view it on the favorite section.</li>
-            <li>You can navigate back to dashboard by clicking the word "Digi-Books".</li>
-        </ul>
-    </div>
+<div class="container instructions">
+    <h3>How to Use Digi-Books</h3>
+    <ul>
+        <li><span>Access "Courses" to view studies by course.</span></li>
+        <li><span>Each course is organized by year.</span></li>
+        <li><span>Use the filtering feature for a more specific search.</span></li>
+        <li><span>Search using keywords for quick results.</span></li>
+        <li><span>Studies are available from 2019 to 2024.</span></li>
+        <li><span>Add studies to your favorites to view them easily in the favorites section.</span></li>
+        <li><span>Click "Digi-Books" to return to the dashboard.</span></li>
+    </ul>
+</div>
+
   </div>
 
 </body>

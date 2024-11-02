@@ -123,9 +123,9 @@ $conn->close();
         }
 
         .nbsc img{
-            margin-left: 25%;
-            margin-top: 10%;
-            width: 50%;
+            margin-left: 5%;
+            margin-top: 5%;
+            width: 95%;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -213,7 +213,7 @@ $conn->close();
     }
     ?>
     <div class="nbsc">
-        <img src="imgs/nbsc.png" alt="">
+        <img src="imgs/nbsc.jpg" alt="">
     </div>
 </body>
 </html>
