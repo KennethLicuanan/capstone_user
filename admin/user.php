@@ -3,8 +3,13 @@ session_start(); // Start the session
 
 // Check if the user is logged in
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-    // If not logged in, redirect to the login page
     header("Location: login.php");
+    exit();
+}
+
+// Ensure user_id is set in the session
+if (!isset($_SESSION['user_id'])) {
+    echo '<div class="alert alert-danger">User ID not found. Please log in again.</div>';
     exit();
 }
 

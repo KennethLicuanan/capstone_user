@@ -1,4 +1,19 @@
 <?php
+
+session_start(); // Start the session
+
+// Check if the user is logged in
+if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
+    header("Location: login.php");
+    exit();
+}
+
+// Ensure user_id is set in the session
+if (!isset($_SESSION['user_id'])) {
+    echo '<div class="alert alert-danger">User ID not found. Please log in again.</div>';
+    exit();
+}
+
 $servername = "localhost";
 $username = "root";
 $password = ""; // replace with your database password
@@ -19,22 +34,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $course = mysqli_real_escape_string($conn, $_POST['course']);
     $type = mysqli_real_escape_string($conn, $_POST['type']);
 
+
     // First insert into studytbl
     $sql = "INSERT INTO studytbl (title, author, abstract, keywords, year) VALUES ('$title', '$author', '$abstract', '$keywords', '$year')";
     if ($conn->query($sql) === TRUE) {
         $study_id = $conn->insert_id; // Get last inserted ID for studytbl
 
         // Now insert into categorytbl
-        $sql_cat = "INSERT INTO categorytbl (study_id, course, type, approval) VALUES ('$study_id', '$course', '$type', 'pending')";
+        $sql_cat = "INSERT INTO categorytbl (study_id, course, type) VALUES ('$study_id', '$course', '$type')";
         if ($conn->query($sql_cat) === TRUE) {
-            echo "Study added successfully";
+            $cat_id = $conn->insert_id; // Get last inserted ID for categorytbl
+
+            // Now insert into uploadtbl with the path to the uploaded file
+            $sql_upload = "INSERT INTO uploadtbl (cat_id, path) VALUES ('$cat_id', '$targetFilePath')";
+            if ($conn->query($sql_upload) === TRUE) {
+                echo "Study added successfully with uploaded approval sheet.";
+            } else {
+                echo "Error in uploadtbl: " . $conn->error;
+            }
         } else {
-            echo "Error: " . $conn->error;
+            echo "Error in categorytbl: " . $conn->error;
         }
     } else {
-        echo "Error: " . $conn->error;
+        echo "Error in studytbl: " . $conn->error;
     }
+} else {
+    echo "File upload failed. Please try again.";
 }
+
 
 $conn->close();
 ?>
@@ -98,18 +125,38 @@ $conn->close();
         }
         .form-title {
             font-weight: bold;
-            font-size: 18px;
+            font-size: 30px;
             margin-bottom: 20px;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         }
         .form-label{
           font-weight: bolder;
           font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         }
-        .plus-button {
-            margin-top: 10px;
-            cursor: pointer;
-            color: black;
+
+        /* Stylish border for input fields */
+        .form-control {
+            border: 1px solid black; /* Green border */
+            padding: 10px;
+            transition: box-shadow 0.3s ease;
         }
+
+        .form-select {
+            border: 1px solid black; /* Green border */
+            padding: 10px;
+            transition: box-shadow 0.3s ease;
+        }
+        
+        /* Add shadow effect on focus */
+        .form-control:focus {
+            box-shadow: 0 4px 10px rgba(76, 175, 80, 0.3);
+            outline: none;
+        }
+        
+        .input-group .plus-button {
+            margin-left: -40px; /* Adjust for button positioning */
+        }
+
         .img-preview {
             width: 100%;
             max-width: 200px;
@@ -119,6 +166,7 @@ $conn->close();
         .sidebar .sidebar-brand img {
             border-radius: 50%;
         }
+
         /* Adjusting modal body for better layout */
 .modal-body {
     display: flex;
