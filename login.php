@@ -102,7 +102,6 @@ $conn->close();
     <style>
         body {
             font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-            background-color: lightblue;
         }
         .modal-content {
             margin-top: 50px;
@@ -121,6 +120,12 @@ $conn->close();
         }
         .modal-title img{
             margin-left: 110%;
+        }
+
+        .nbsc img{
+            margin-left: 5%;
+            margin-top: 5%;
+            width: 95%;
         }
     </style>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
@@ -155,8 +160,8 @@ $conn->close();
                 <div class="modal-body">
                     <form action="" method="post">
                         <div class="form-group">
-                            <label for="username">Credentials</label>
-                            <input type="text" class="form-control" id="username" name="username" required>
+                            <label for="username">Institutional Identification</label>
+                            <input type="number" class="form-control" id="username" name="username" required>
                         </div>
                         <div class="form-group">
                             <label for="password">Password</label>
@@ -182,8 +187,8 @@ $conn->close();
                 <div class="modal-body">
                     <form action="" method="post">
                         <div class="form-group">
-                            <label for="signup_username">Username</label>
-                            <input type="text" class="form-control" id="signup_username" name="signup_username" required>
+                            <label for="signup_username">Institutional Identification</label>
+                            <input type="number" class="form-control" id="signup_username" name="signup_username" required>
                         </div>
                         <div class="form-group">
                             <label for="signup_password">Password</label>
@@ -199,7 +204,6 @@ $conn->close();
             </div>
         </div>
     </div>
-
     <?php
     if (!empty($login_error)) {
         echo "<script>alert('$login_error');</script>";
@@ -208,5 +212,8 @@ $conn->close();
         echo "<script>alert('$signup_error');</script>";
     }
     ?>
+    <div class="nbsc">
+        <img src="imgs/nbsc.jpg" alt="">
+    </div>
 </body>
 </html>

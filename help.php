@@ -16,97 +16,135 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digi-Books</title>
     <link rel="stylesheet" href="dash.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
         body {
           background-color: #eeeeee;
         }
-        .instructions {
-          margin: 30px auto;
-          padding: 30px;
-          background-color: #ffffff;
-          border-radius: 15px;
-          box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-          max-width: 800px;
-          text-align: center;
-          animation: fadeIn 1s ease-in-out;
+            /* General instructions container style */
+    .instructions {
+        margin: 30px auto;
+        padding: 30px;
+        background-color: #f5f7fa;
+        border-radius: 8px;
+        max-width: 800px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        text-align: left;
+        color: #333;
+    }
+
+    /* Title styling */
+    .instructions h3 {
+        color: #2c3e50;
+        font-weight: bold;
+        font-size: 26px;
+        margin-bottom: 15px;
+        text-align: center;
+        border-bottom: 2px solid #d1d5db;
+        padding-bottom: 10px;
+    }
+
+    /* List styling */
+    .instructions ul {
+        list-style-type: none;
+        padding: 0;
+    }
+
+    /* List items styling */
+    .instructions ul li {
+        display: flex;
+        align-items: flex-start;
+        margin: 15px 0;
+        font-size: 18px;
+        line-height: 1.6;
+        color: #555;
+        font-weight: bold;
+    }
+
+    /* Icon for each list item */
+    .instructions ul li::before {
+        content: '\f05a'; /* Font Awesome info-circle icon */
+        font-family: "Font Awesome 5 Free";
+        font-weight: 900;
+        color: #2d9cdb;
+        margin-right: 10px;
+    }
+
+    /* Text adjustments */
+    .instructions ul li span {
+        flex: 1;
+    }
+
+        
+        .sidebar {
+            height: 100%;
+            width: 250px;
+            position: fixed;
+            top: 0;
+            text-align: start;
+            left: 0;
+            background-color: #343a40;
+            padding-top: 20px;
+            overflow-x: hidden;
+            background-color: darkblue;
+            font-weight: bold;
+            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         }
-        .instructions h3 {
-          color: #2c3e50;
-          font-weight: bold;
-          margin-bottom: 20px;
-          font-size: 28px;
+        .sidebar a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 18px;
+            color: white;
+            display: block;
         }
-        .instructions ul {
-          list-style-type: none;
-          padding: 0;
+        .sidebar a:hover {
+            background-color: black;
         }
-        .instructions ul li {
-          margin: 10px 0;
-          font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
-          font-size: 18px;
-          font-weight: bold;
-          color: #34495e;
-          padding: 10px;
-          background-color: #ecf0f1;
-          border-radius: 8px;
-          transition: transform 0.2s;
+        .sidebar .sidebar-brand {
+            font-size: 24px;
+            margin-bottom: 1rem;
+            color: white;
+            text-align: center;
         }
-        .instructions ul li:hover {
-          transform: scale(1.05);
-          background-color: #d0dff0;
+        .sidebar .sidebar-brand img {
+            border-radius: 50%;
         }
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
+        content{
+          
         }
     </style>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg custom-color">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="./dashboard.php"><img src="imgs/book.png" height="70" alt=""> Digi - Studies</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNavDropdown">
-          <ul class="navbar-nav">
-            <li class="nav-item dropdown">
-              <a class="nav-link dropdown-toggle" href="#" id="courseDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Courses
-              </a>
-              <ul class="dropdown-menu" aria-labelledby="courseDropdown">
-              <li><a class="dropdown-item" href="./sections/IT.php">College of Computer Studies</a></li>
-                <li><a class="dropdown-item" href="./sections/BA.php">Business Administration</a></li>
-                <li><a class="dropdown-item" href="./sections/TEP.php">Teacehrs Education Program</a></li>
-              </ul>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="./add_favorite.php">Favorites</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="help.php">Help</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="logout.php">Logout</a>
-            </li>
-          </ul>
-        </div>
-      </div>
-    </nav>
 
-    <div class="container instructions">
-        <h3>How to Use Digi-Books</h3>
-        <ul>
-            <li>You can press the "Courses" dropdown to see the studies of each course.</li>
-            <li>Each course is categorized by year.</li>
-            <li>You can use the filtering feature to narrow down your search for specific studies.</li>
-            <li>Use keywords to find specific studies quickly.</li>
-            <li>Uploaded studies are available from the years 2019 to 2024.</li>
-            <li>You can add your favorite studies. And view it on the favorite section.</li>
-            <li>You can navigate back to dashboard by clicking the word "Digi-Books".</li>
-        </ul>
+    <div class="sidebar">
+        <div class="sidebar-brand">
+            <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
+        </div>
+        <a href="dashboard.php"><i class="fas fa-home"></i> Home</a>
+        <a href="./sections/IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
+        <a href="./sections/BA.php"><i class="fas fa-briefcase"></i> Business sectionsistration</a>
+        <a href="./sections/TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
+        <a href="add_favorite.php"><i class="fas fa-star"></i> Favorites</a>
+        <a href="notification.php"><i class="fas fa-bell"></i> Notifications</a>
+        <a href="help.php"><i class="fas fa-pencil"></i> Help</a>
+        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
     </div>
+<div class="content">
+<div class="container instructions">
+    <h3>How to Use Digi-Books</h3>
+    <ul>
+        <li><span>Access "Courses" to view studies by course.</span></li>
+        <li><span>Each course is organized by year.</span></li>
+        <li><span>Use the filtering feature for a more specific search.</span></li>
+        <li><span>Search using keywords for quick results.</span></li>
+        <li><span>Studies are available from 2019 to 2024.</span></li>
+        <li><span>Add studies to your favorites to view them easily in the favorites section.</span></li>
+        <li><span>Click "Digi-Books" to return to the dashboard.</span></li>
+    </ul>
+</div>
+
+  </div>
 
 </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
