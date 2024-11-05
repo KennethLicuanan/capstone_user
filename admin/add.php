@@ -354,7 +354,7 @@ $conn->close();
         const programOptions = {
             IT: ['IoT', 'Web-Based', 'Web-Application','Mobile Application'],
             BA: ['Financial Management', 'Operations Management', 'Marketing Management'],
-            TEP: ['Early Childhood', 'Seconrady Education', 'Elementary Education']
+            TEP: ['Early Childhood', 'Secondary Education', 'Elementary Education']
         };
 
         document.getElementById('course').addEventListener('change', function() {
