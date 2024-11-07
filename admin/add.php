@@ -34,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $abstract = $conn->real_escape_string($_POST['abstract'] ?? '');
     $keywords = $conn->real_escape_string($_POST['keywords'] ?? '');
     $year = $conn->real_escape_string($_POST['year'] ?? '');
+    $cNumber = $conn->real_escape_string($_POST['cNumber'] ?? '');
     $course = $conn->real_escape_string($_POST['course'] ?? '');
     $type = $conn->real_escape_string($_POST['type'] ?? '');
 
@@ -49,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (move_uploaded_file($_FILES["uploadFile"]["tmp_name"], $targetFilePath)) {
             
             // Insert data into studytbl
-            $sqlStudy = "INSERT INTO studytbl (title, author, abstract, keywords, year) VALUES ('$title', '$author', '$abstract', '$keywords', '$year')";
+            $sqlStudy = "INSERT INTO studytbl (title, author, abstract, keywords, year, cNumber) VALUES ('$title', '$author', '$abstract', '$keywords', '$year', '$cNumber')";
             if ($conn->query($sqlStudy) === TRUE) {
                 $study_id = $conn->insert_id;
 
@@ -266,6 +267,12 @@ $conn->close();
     <div class="mb-3">
         <label for="year" class="form-label">Year</label>
         <input type="number" name="year" class="form-control" id="year" placeholder="Enter study year">
+    </div>
+
+    <!-- cNumber Number field -->
+    <div class="mb-3">
+        <label for="cNumber" class="form-label">Call Number</label>
+        <input type="number" name="cNumber" class="form-control" id="cNumber" placeholder="Enter Call Number">
     </div>
 
     <!-- Course selection -->
