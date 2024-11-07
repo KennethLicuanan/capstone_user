@@ -1,6 +1,5 @@
 <?php
-
-session_start(); // Start the session
+session_start();
 
 // Check if the user is logged in
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
@@ -14,57 +13,77 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
+// Database connection parameters
 $servername = "localhost";
 $username = "root";
-$password = ""; // replace with your database password
+$password = ""; // Replace with your database password
 $dbname = "capstonedb";
 
+// Create a new database connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
+// Check for database connection errors
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $title = mysqli_real_escape_string($conn, $_POST['title']);
-    $author = mysqli_real_escape_string($conn, $_POST['author']);
-    $abstract = mysqli_real_escape_string($conn, $_POST['abstract']);
-    $keywords = mysqli_real_escape_string($conn, $_POST['keywords']);
-    $year = mysqli_real_escape_string($conn, $_POST['year']);
-    $course = mysqli_real_escape_string($conn, $_POST['course']);
-    $type = mysqli_real_escape_string($conn, $_POST['type']);
+    // Sanitize form inputs
+    $title = $conn->real_escape_string($_POST['title'] ?? '');
+    $author = $conn->real_escape_string($_POST['author'] ?? '');
+    $abstract = $conn->real_escape_string($_POST['abstract'] ?? '');
+    $keywords = $conn->real_escape_string($_POST['keywords'] ?? '');
+    $year = $conn->real_escape_string($_POST['year'] ?? '');
+    $cNumber = $conn->real_escape_string($_POST['cNumber'] ?? '');
+    $course = $conn->real_escape_string($_POST['course'] ?? '');
+    $type = $conn->real_escape_string($_POST['type'] ?? '');
 
+    // File upload path and allowed formats
+    $targetDir = "uploads/";
+    $fileName = basename($_FILES["uploadFile"]["name"] ?? '');
+    $targetFilePath = $targetDir . $fileName;
+    $fileType = pathinfo($targetFilePath, PATHINFO_EXTENSION);
+    $allowedTypes = array('jpg', 'jpeg', 'png', 'gif');
 
-    // First insert into studytbl
-    $sql = "INSERT INTO studytbl (title, author, abstract, keywords, year) VALUES ('$title', '$author', '$abstract', '$keywords', '$year')";
-    if ($conn->query($sql) === TRUE) {
-        $study_id = $conn->insert_id; // Get last inserted ID for studytbl
+    // Validate file type and move the uploaded file
+    if (!empty($fileName) && in_array($fileType, $allowedTypes)) {
+        if (move_uploaded_file($_FILES["uploadFile"]["tmp_name"], $targetFilePath)) {
+            
+            // Insert data into studytbl
+            $sqlStudy = "INSERT INTO studytbl (title, author, abstract, keywords, year, cNumber) VALUES ('$title', '$author', '$abstract', '$keywords', '$year', '$cNumber')";
+            if ($conn->query($sqlStudy) === TRUE) {
+                $study_id = $conn->insert_id;
 
-        // Now insert into categorytbl
-        $sql_cat = "INSERT INTO categorytbl (study_id, course, type) VALUES ('$study_id', '$course', '$type')";
-        if ($conn->query($sql_cat) === TRUE) {
-            $cat_id = $conn->insert_id; // Get last inserted ID for categorytbl
+                // Insert data into categorytbl
+                $sqlCategory = "INSERT INTO categorytbl (study_id, course, type) VALUES ('$study_id', '$course', '$type')";
+                if ($conn->query($sqlCategory) === TRUE) {
+                    $cat_id = $conn->insert_id;
 
-            // Now insert into uploadtbl with the path to the uploaded file
-            $sql_upload = "INSERT INTO uploadtbl (cat_id, path) VALUES ('$cat_id', '$targetFilePath')";
-            if ($conn->query($sql_upload) === TRUE) {
-                echo "Study added successfully with uploaded approval sheet.";
+                    // Insert data into uploadtbl
+                    $sqlUpload = "INSERT INTO uploadtbl (cat_id, path) VALUES ('$cat_id', '$targetFilePath')";
+                    if ($conn->query($sqlUpload) === TRUE) {
+                        echo "<div class='alert alert-success'>Study added successfully with uploaded image.</div>";
+                    } else {
+                        echo "<div class='alert alert-danger'>Error inserting into uploadtbl: " . $conn->error . "</div>";
+                    }
+                } else {
+                    echo "<div class='alert alert-danger'>Error inserting into categorytbl: " . $conn->error . "</div>";
+                }
             } else {
-                echo "Error in uploadtbl: " . $conn->error;
+                echo "<div class='alert alert-danger'>Error inserting into studytbl: " . $conn->error . "</div>";
             }
         } else {
-            echo "Error in categorytbl: " . $conn->error;
+            echo "<div class='alert alert-danger'>File upload failed. Please try again.</div>";
         }
     } else {
-        echo "Error in studytbl: " . $conn->error;
+        echo "<div class='alert alert-warning'>Invalid file format. Only JPG, JPEG, PNG, and GIF files are allowed.</div>";
     }
-} else {
-    echo "File upload failed. Please try again.";
 }
 
-
+// Close database connection
 $conn->close();
 ?>
+
 
 
 <!DOCTYPE html>
@@ -112,9 +131,7 @@ $conn->close();
             margin-bottom: 1rem;
             color: white;
             text-align: center;
-        }
-
-        
+        }      
         .form-card {
             background-color: #fff;
             padding: 20px;
@@ -133,14 +150,12 @@ $conn->close();
           font-weight: bolder;
           font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
         }
-
         /* Stylish border for input fields */
         .form-control {
             border: 1px solid black; /* Green border */
             padding: 10px;
             transition: box-shadow 0.3s ease;
         }
-
         .form-select {
             border: 1px solid black; /* Green border */
             padding: 10px;
@@ -166,28 +181,24 @@ $conn->close();
         .sidebar .sidebar-brand img {
             border-radius: 50%;
         }
-
         /* Adjusting modal body for better layout */
-.modal-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-/* Optional: Add a specific size for the cropped image preview */
-#capturedImage {
-    max-width: 100%; /* Keep it responsive */
-    width: 600px; /* Set a specific width */
-    height: auto; /* Maintain aspect ratio */
-    margin-top: 10px;
-}
-
-
-/* Optional: Add max-height for video and image in the modal */
-#cameraFeed, #capturedImage {
-    max-height: 300px; /* Set the maximum height */
-    width: auto; /* Maintain aspect ratio */
-}
-
+        .modal-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        /* Optional: Add a specific size for the cropped image preview */
+        #capturedImage {
+            max-width: 100%; /* Keep it responsive */
+            width: 600px; /* Set a specific width */
+            height: auto; /* Maintain aspect ratio */
+            margin-top: 10px;
+                }
+        /* Optional: Add max-height for video and image in the modal */
+        #cameraFeed, #capturedImage {
+            max-height: 300px; /* Set the maximum height */
+            width: auto; /* Maintain aspect ratio */
+        }
     </style>
 </head>
 <body>
@@ -208,141 +219,149 @@ $conn->close();
     
 <div class="content">
     <div class="container">
+        <form action="" method="POST" enctype="multipart/form-data">
         <div class="form-card">
             <div class="form-title">Study Information</div>
             
             <!-- Title field with Plus Button -->
-            <div class="mb-3">
-                <label for="title" class="form-label">Title</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="title" placeholder="Enter study title">
-                    <input type="file" id="titleImage" accept="image/*" style="display: none;">
-                    <i class="fas fa-plus plus-button" onclick="triggerFileInput('titleImage')"></i>
-                </div>
-            </div>
-            
-            <!-- Author field with Plus Button -->
-            <div class="mb-3">
-                <label for="author" class="form-label">Author</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="author" placeholder="Enter author name">
-                    <input type="file" id="authorImage" accept="image/*" style="display: none;">
-                    <i class="fas fa-plus plus-button" onclick="triggerFileInput('authorImage')"></i>
-                </div>
-            </div>
-            
-            <!-- Abstract field with Plus Button -->
-            <div class="mb-3">
-                <label for="abstract" class="form-label">Abstract</label>
-                <div class="input-group">
-                    <textarea class="form-control" id="abstract" rows="4" placeholder="Enter abstract"></textarea>
-                    <input type="file" id="abstractImage" accept="image/*" style="display: none;">
-                    <i class="fas fa-plus plus-button" onclick="triggerFileInput('abstractImage')"></i>
-                </div>
-            </div>
-            
-            <!-- Keywords field with Plus Button -->
-            <div class="mb-3">
-                <label for="keywords" class="form-label">Keywords</label>
-                <div class="input-group">
-                    <input type="text" class="form-control" id="keywords" placeholder="Enter keywords">
-                    <input type="file" id="keywordsImage" accept="image/*" style="display: none;">
-                    <i class="fas fa-plus plus-button" onclick="triggerFileInput('keywordsImage')"></i>
-                </div>
-            </div>
-            
-            <!-- Year field -->
-            <div class="mb-3">
-                <label for="year" class="form-label">Year</label>
-                <input type="number" class="form-control" id="year" placeholder="Enter study year">
-            </div>
-            
-            <!-- Course selection -->
-            <div class="mb-3">
-                <label for="course" class="form-label">Select Course</label>
-                <select id="course" class="form-select">
-                    <option selected>Choose...</option>
-                    <option value="IT">College of Computer Studies</option>
-                    <option value="BA">Business Administration</option>
-                    <option value="TEP">Teachers Education Program</option>
-                </select>
-            </div>
-            
-            <!-- Program selection -->
-            <div class="mb-3">
-                <label for="program" class="form-label">Select Program/Type of Study</label>
-                <select id="program" class="form-select">
-                    <option selected>Choose...</option>
-                </select>
-            </div>
-            
-            <!-- New photo upload section -->
-            <div class="mb-3">
-                <label for="studyPhoto" class="form-label">Approval Sheet</label>
-                <input type="file" id="studyPhoto" accept="image/*" class="form-control" onchange="previewPhoto()">
-                <img id="photoPreview" class="img-preview" src="#" alt="Photo Preview" style="display:none;">
-            </div>
-            
-            <!-- Modal for Image Source Selection -->
-<div class="modal fade" id="imageSourceModal" tabindex="-1" aria-labelledby="imageSourceModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="imageSourceModalLabel">Select Image Source</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <button type="button" class="btn btn-primary w-100 mb-2" onclick="startCamera()">Use Camera</button>
-                <button type="button" class="btn btn-secondary w-100" onclick="chooseFromGallery()">Choose from Gallery</button>
-            </div>
+    <div class="mb-3">
+        <label for="title" class="form-label">Title</label>
+        <div class="input-group">
+            <input type="text" name="title" class="form-control" id="title" placeholder="Enter study title">
+            <input type="file" name="titleImage" id="titleImage" accept="image/*" style="display: none;">
+            <i class="fas fa-plus plus-button" onclick="triggerFileInput('titleImage')"></i>
         </div>
     </div>
-</div>
 
-<!-- Modal for Camera Live Feed -->
-<div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cameraModalLabel">Camera Live Feed</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <video id="cameraFeed" width="100%" autoplay></video>
-                <button type="button" class="btn btn-success mt-2" onclick="captureImage()">Capture</button>
-            </div>
+    <!-- Author field with Plus Button -->
+    <div class="mb-3">
+        <label for="author" class="form-label">Author</label>
+        <div class="input-group">
+            <input type="text" name="author" class="form-control" id="author" placeholder="Enter author name">
+            <input type="file" name="authorImage" id="authorImage" accept="image/*" style="display: none;">
+            <i class="fas fa-plus plus-button" onclick="triggerFileInput('authorImage')"></i>
         </div>
     </div>
-</div>
 
-<!-- Modal for Image Cropping -->
-<div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-md">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cropModalLabel">Crop Image</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body text-center">
-                <img id="capturedImage" alt="Captured Image" style="max-width: 100%;" />
-                <button type="button" class="btn btn-primary mt-2" onclick="confirmCrop()">Confirm Crop</button>
-            </div>
+    <!-- Abstract field with Plus Button -->
+    <div class="mb-3">
+        <label for="abstract" class="form-label">Abstract</label>
+        <div class="input-group">
+            <textarea name="abstract" class="form-control" id="abstract" rows="4" placeholder="Enter abstract"></textarea>
+            <input type="file" name="abstractImage" id="abstractImage" accept="image/*" style="display: none;">
+            <i class="fas fa-plus plus-button" onclick="triggerFileInput('abstractImage')"></i>
         </div>
     </div>
-</div>
 
+    <!-- Keywords field with Plus Button -->
+    <div class="mb-3">
+        <label for="keywords" class="form-label">Keywords</label>
+        <div class="input-group">
+            <input type="text" name="keywords" class="form-control" id="keywords" placeholder="Enter keywords">
+            <input type="file" name="keywordsImage" id="keywordsImage" accept="image/*" style="display: none;">
+            <i class="fas fa-plus plus-button" onclick="triggerFileInput('keywordsImage')"></i>
+        </div>
+    </div>
 
+    <!-- Year field -->
+    <div class="mb-3">
+        <label for="year" class="form-label">Year</label>
+        <input type="number" name="year" class="form-control" id="year" placeholder="Enter study year">
+    </div>
+
+    <!-- cNumber Number field -->
+    <div class="mb-3">
+        <label for="cNumber" class="form-label">Call Number</label>
+        <input type="number" name="cNumber" class="form-control" id="cNumber" placeholder="Enter Call Number">
+    </div>
+
+    <!-- Course selection -->
+    <div class="mb-3">
+        <label for="course" class="form-label">Select Course</label>
+        <select name="course" id="course" class="form-select">
+            <option selected>Choose...</option>
+            <option value="IT">College of Computer Studies</option>
+            <option value="BA">Business Administration</option>
+            <option value="TEP">Teachers Education Program</option>
+        </select>
+    </div>
+
+    <!-- Program selection -->
+    <div class="mb-3">
+        <label for="program" class="form-label">Select Program/Type of Study</label>
+        <select name="type" id="program" class="form-select">
+            <option selected>Choose...</option>
+        </select>
+    </div>
+
+            <!-- File Upload -->
+            <div class="mb-3">
+                <label for="uploadFile" class="form-label">Upload Image</label>
+                <input type="file" name="uploadFile" id="uploadFile" class="form-control" accept="image/*" required>
+            </div>
+            
             <button id="addStudyButton" class="btn btn-primary" onclick="addStudy()" data-bs-toggle="popover" title="Success" data-bs-content="Study added successfully!">Add Study</button>
+            </form>
+            
+
+                            <!-- Modal for Image Source Selection -->
+                <div class="modal fade" id="imageSourceModal" tabindex="-1" aria-labelledby="imageSourceModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="imageSourceModalLabel">Select Image Source</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <button type="button" class="btn btn-primary w-100 mb-2" onclick="startCamera()">Use Camera</button>
+                                <button type="button" class="btn btn-secondary w-100" onclick="chooseFromGallery()">Choose from Gallery</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal for Camera Live Feed -->
+                <div class="modal fade" id="cameraModal" tabindex="-1" aria-labelledby="cameraModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-md">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cameraModalLabel">Camera Live Feed</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <video id="cameraFeed" width="100%" autoplay></video>
+                                <button type="button" class="btn btn-success mt-2" onclick="captureImage()">Capture</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal for Image Cropping -->
+                <div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-md">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="cropModalLabel">Crop Image</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img id="capturedImage" alt="Captured Image" style="max-width: 100%;" />
+                                <button type="button" class="btn btn-primary mt-2" onclick="confirmCrop()">Confirm Crop</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
-</div>
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
     <script>
         const programOptions = {
             IT: ['IoT', 'Web-Based', 'Web-Application','Mobile Application'],
             BA: ['Financial Management', 'Operations Management', 'Marketing Management'],
-            TEP: ['Early Childhood', 'Seconrady Education', 'Elementary Education']
+            TEP: ['Early Childhood', 'Secondary Education', 'Elementary Education']
         };
 
         document.getElementById('course').addEventListener('change', function() {
@@ -364,11 +383,9 @@ $conn->close();
             }
         });
 
-
 // Track the input field currently being edited
 let currentInputId = null;
 let cropper;
-
 
 // Open modal to select image source
 function triggerFileInput(inputId) {
@@ -403,7 +420,6 @@ function startCamera() {
         console.error('Camera access error:', error);
     });
 }
-
 
 // Capture image and display it in the cropper
 function captureImage() {
@@ -463,8 +479,6 @@ function recognizeTextFromImageData(imageData) {
     });
 }
 
-
-
 // Function to use the gallery instead of the camera
 function chooseFromGallery() {
     document.getElementById(currentInputId).removeAttribute('capture'); 
@@ -504,7 +518,6 @@ function chooseFromGallery() {
     reader.readAsDataURL(file);
 }
 
-
         // Event listeners for each file input
         document.getElementById('titleImage').addEventListener('change', function() {
             recognizeText('titleImage', 'title');
@@ -521,27 +534,6 @@ function chooseFromGallery() {
         document.getElementById('keywordsImage').addEventListener('change', function() {
             recognizeText('keywordsImage', 'keywords');
         });
-
-        // Function to preview the uploaded photo
-        function previewPhoto() {
-            const photoInput = document.getElementById('studyPhoto');
-            const preview = document.getElementById('photoPreview');
-            
-            if (photoInput.files && photoInput.files[0]) {
-                const reader = new FileReader();
-                
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                
-                reader.readAsDataURL(photoInput.files[0]);
-            } else {
-                preview.src = '#';
-                preview.style.display = 'none';
-            }
-        }
-
 
         function addStudy() {
         // Get form data

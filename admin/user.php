@@ -27,6 +27,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Fetch user data from usertbl, excluding admin users
+$sql = "SELECT user_id, credentials, password, user_type FROM usertbl WHERE user_type != 'admin'";
+$result = $conn->query($sql);
 
 ?>
 
@@ -82,26 +85,55 @@ if ($conn->connect_error) {
 <body>
 
 <div class="sidebar">
-        <div class="sidebar-brand">
-            <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
-        </div>
-        <a href="../admin.php"><i class="fas fa-home"></i> Home</a>
-        <a href="IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
-        <a href="BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
-        <a href="TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
-        <a href="add.php"><i class="fas fa-plus"></i> Add Study</a>
-        <a href="manage.php"><i class="fas fa-tasks"></i> Manage Studies</a>
-        <a href="user.php"><i class="fas fa-users"></i> User Logs</a>
-        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    <div class="sidebar-brand">
+        <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
     </div>
+    <a href="../admin.php"><i class="fas fa-home"></i> Home</a>
+    <a href="IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
+    <a href="BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
+    <a href="TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
+    <a href="add.php"><i class="fas fa-plus"></i> Add Study</a>
+    <a href="manage.php"><i class="fas fa-tasks"></i> Manage Studies</a>
+    <a href="user.php"><i class="fas fa-users"></i> User Logs</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
 
-    <div class="content">
-        <!-- Your page content goes here -->
-    </div>
+<div class="content">
+    <h2>User Information</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Credentials</th>
+                <th>Password</th>
+                <th>User Type</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            if ($result->num_rows > 0) {
+                // Output data of each row
+                while ($row = $result->fetch_assoc()) {
+                    echo "<tr>
+                            <td>" . $row["user_id"] . "</td>
+                            <td>" . $row["credentials"] . "</td>
+                            <td>" . $row["password"] . "</td>
+                            <td>" . $row["user_type"] . "</td>
+                          </tr>";
+                }
+            } else {
+                echo "<tr><td colspan='4'>No users found</td></tr>";
+            }
+            ?>
+        </tbody>
+    </table>
+</div>
 
-
-
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
+
+<?php
+// Close connection
+$conn->close();
+?>
