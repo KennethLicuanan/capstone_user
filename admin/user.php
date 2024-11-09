@@ -1,5 +1,5 @@
 <?php
-session_start(); // Start the session
+session_start();
 
 // Check if the user is logged in
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
@@ -15,22 +15,48 @@ if (!isset($_SESSION['user_id'])) {
 
 // Database connection
 $servername = "localhost";
-$username = "root"; // Use your database username
-$password = ""; // Use your database password
-$dbname = "capstonedb"; // Database name
+$username = "root";
+$password = "";
+$dbname = "capstonedb";
 
-// Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
 
-// Check connection
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Fetch user data from usertbl, excluding admin users
-$sql = "SELECT user_id, credentials, password, user_type FROM usertbl WHERE user_type != 'admin'";
-$result = $conn->query($sql);
+// Fetch user data from usertbl excluding admin users
+$userSql = "SELECT user_id, credentials, user_type FROM usertbl WHERE user_type != 'admin'";
+$userResult = $conn->query($userSql);
 
+// Fetch activity log data from activitylog_tbl excluding admin users
+$activitySql = "SELECT a.user_id, a.activity, MAX(a.date) AS date 
+                FROM activitylog_tbl a
+                JOIN usertbl u ON a.user_id = u.user_id
+                WHERE u.user_type != 'admin'
+                GROUP BY a.user_id, a.activity";
+$activityResult = $conn->query($activitySql);
+
+// Delete user and associated activity records
+if (isset($_GET['delete_id'])) {
+    $delete_id = $_GET['delete_id'];
+    
+    // Prepare delete statements
+    $deleteUser = "DELETE FROM usertbl WHERE user_id = ?";
+    $deleteActivity = "DELETE FROM activitylog_tbl WHERE user_id = ?";
+    
+    $stmt1 = $conn->prepare($deleteUser);
+    $stmt1->bind_param("i", $delete_id);
+    $stmt1->execute();
+    
+    $stmt2 = $conn->prepare($deleteActivity);
+    $stmt2->bind_param("i", $delete_id);
+    $stmt2->execute();
+    
+    // Redirect after deletion
+    header("Location: user.php");
+    exit();
+}
 ?>
 
 <!DOCTYPE html>
@@ -40,46 +66,24 @@ $result = $conn->query($sql);
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digi-Studies</title>
     <link rel="stylesheet" href="../admin.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        body {
-            background-color: #ffffff;
-            margin-left: 250px; /* Leave space for the sidebar */
-        }
-        .sidebar {
-            height: 100%;
-            width: 250px;
-            position: fixed;
-            top: 0;
-            text-align: start;
-            left: 0;
-            background-color: #343a40;
-            padding-top: 20px;
-            overflow-x: hidden;
-            background-color: darkblue;
-            font-weight: bold;
-            font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
-        }
-        .sidebar a {
-            padding: 10px 15px;
-            text-decoration: none;
-            font-size: 18px;
-            color: white;
-            display: block;
-        }
-        .sidebar a:hover {
-            background-color: black;
-        }
-        .sidebar .sidebar-brand {
-            font-size: 24px;
-            margin-bottom: 1rem;
-            color: white;
-            text-align: center;
-        }
-        .sidebar .sidebar-brand img {
-            border-radius: 50%;
-        }
+        body { background-color: #ffffff; margin-left: 250px; }
+        .sidebar { height: 100%; width: 250px; position: fixed; top: 0; left: 0; background-color: darkblue; font-weight: bold; font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif; }
+        .sidebar a { padding: 10px 15px; text-decoration: none; font-size: 18px; color: white; display: block; }
+        .sidebar a:hover { background-color: black; }
+        .sidebar .sidebar-brand { font-size: 24px; margin-bottom: 1rem; color: white; text-align: center; }
+        .sidebar .sidebar-brand img { border-radius: 50%; }
+
+        body { background-color: #f5f5f5; margin-left: 250px; font-family: Arial, sans-serif; }
+        .content { padding: 20px; margin-top: 20px; }
+        h2 { color: #343a40; font-weight: 600; text-transform: uppercase; margin-bottom: 20px; text-align: center; font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; }
+        .table { background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        .table th { background-color: #007bff; color: #ffffff; font-weight: bold; text-align: center; }
+        .table td, .table th { padding: 15px; text-align: center; }
+        .table tbody tr:nth-child(even) { background-color: #f9f9f9; }
+        .alert { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; text-align: center; border-radius: 5px; margin: 10px auto; width: 80%; }
     </style>
 </head>
 <body>
@@ -105,20 +109,19 @@ $result = $conn->query($sql);
             <tr>
                 <th>User ID</th>
                 <th>Credentials</th>
-                <th>Password</th>
                 <th>User Type</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
             <?php
-            if ($result->num_rows > 0) {
-                // Output data of each row
-                while ($row = $result->fetch_assoc()) {
+            if ($userResult->num_rows > 0) {
+                while ($user = $userResult->fetch_assoc()) {
                     echo "<tr>
-                            <td>" . $row["user_id"] . "</td>
-                            <td>" . $row["credentials"] . "</td>
-                            <td>" . $row["password"] . "</td>
-                            <td>" . $row["user_type"] . "</td>
+                            <td>" . $user["user_id"] . "</td>
+                            <td>" . $user["credentials"] . "</td>
+                            <td>" . $user["user_type"] . "</td>
+                            <td><a href='user.php?delete_id=" . $user["user_id"] . "' onclick=\"return confirm('Are you sure you want to delete this user?')\" class='btn btn-danger btn-sm'>Delete</a></td>
                           </tr>";
                 }
             } else {
@@ -127,13 +130,34 @@ $result = $conn->query($sql);
             ?>
         </tbody>
     </table>
+
+    <h2>Activity Logs</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>User ID</th>
+                <th>Activity</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <?php
+            if ($activityResult->num_rows > 0) {
+                while ($activity = $activityResult->fetch_assoc()) {
+                    echo "<tr>
+                            <td>" . $activity["user_id"] . "</td>
+                            <td>" . $activity["activity"] . "</td>
+                            <td>" . $activity["date"] . "</td>
+                          </tr>";
+                }
+            } else {
+                echo "<tr><td colspan='3'>No activity logs found</td></tr>";
+            }
+            ?>
+        </tbody>
+    </table>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-<?php
-// Close connection
-$conn->close();
-?>
