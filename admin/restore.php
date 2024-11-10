@@ -30,9 +30,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['archive_id'])) {
         $row = $result->fetch_assoc();
 
         // Insert data back into studytbl
-        $insert_study = "INSERT INTO studytbl (title, author, abstract, keywords, year) VALUES (?, ?, ?, ?, ?)";
+        $insert_study = "INSERT INTO studytbl (title, author, abstract, keywords, year, cNumber) VALUES (?, ?, ?, ?, ?, ?)";
         $stmt_insert_study = $conn->prepare($insert_study);
-        $stmt_insert_study->bind_param("sssss", $row['title'], $row['author'], $row['abstract'], $row['keywords'], $row['year']);
+        $stmt_insert_study->bind_param("ssssss", $row['title'], $row['author'], $row['abstract'], $row['keywords'], $row['year'], $row['cNumber']);
         $stmt_insert_study->execute();
         $new_study_id = $conn->insert_id; // Get the new study_id
 

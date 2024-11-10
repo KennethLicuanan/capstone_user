@@ -1,5 +1,5 @@
 <?php
-session_start(); // Start the session
+session_start();
 
 // Check if the user is logged in
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
@@ -15,11 +15,9 @@ if (!isset($_SESSION['user_id'])) {
 
 // Database connection
 $servername = "localhost";
-$username = "root"; // Use your database username
-$password = ""; // Use your database password
-$dbname = "capstonedb"; // Database name
-
-// Create connection
+$username = "root";
+$password = "";
+$dbname = "capstonedb";
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
@@ -27,7 +25,21 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
+// Get search query if provided
+$search = isset($_GET['search']) ? $_GET['search'] : '';
 
+// Query to get all IT studies
+$sql = "SELECT s.study_id, s.title, s.author, s.abstract, s.keywords, s.year, s.cNumber 
+        FROM studytbl AS s
+        JOIN categorytbl AS c ON s.study_id = c.study_id
+        WHERE c.course = 'BA'";
+
+                // Add search conditions if there is a search query
+if ($search) {
+    $sql .= " AND (s.title LIKE '%$search%' OR s.author LIKE '%$search%' OR s.keywords LIKE '%$search%')";
+}
+
+$result = $conn->query($sql);
 ?>
 
 <!DOCTYPE html>
@@ -35,11 +47,10 @@ if ($conn->connect_error) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digi-Books</title>
-    <link rel="stylesheet" href="sections.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Digi-Books - IT Studies</title>
+    <link rel="stylesheet" href="../admin.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
     <style>
         body {
             background-color: #ffffff;
@@ -50,12 +61,9 @@ if ($conn->connect_error) {
             width: 250px;
             position: fixed;
             top: 0;
-            text-align: start;
             left: 0;
-            background-color: #343a40;
-            padding-top: 20px;
-            overflow-x: hidden;
             background-color: darkblue;
+            padding-top: 20px;
             font-weight: bold;
             font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         }
@@ -78,28 +86,91 @@ if ($conn->connect_error) {
         .sidebar .sidebar-brand img {
             border-radius: 50%;
         }
+        .content {
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .node-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .node {
+            width: 150px;
+            height: 150px;
+            background-color: #6c757d;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 14px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .node:hover {
+            background-color: #343a40;
+        }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-        <div class="sidebar-brand">
+    <div class="sidebar-brand">
             <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
         </div>
-        <a href="../admin.php"><i class="fas fa-home"></i> Home</a>
-        <a href="IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
-        <a href="BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
-        <a href="TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
-        <a href="add.php"><i class="fas fa-plus"></i> Add Study</a>
-        <a href="manage.php"><i class="fas fa-tasks"></i> Manage Studies</a>
-        <a href="user.php"><i class="fas fa-users"></i> User Logs</a>
-        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
+    <a href="../admin.php"><i class="fas fa-home"></i> Home</a>
+    <a href="IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
+    <a href="BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
+    <a href="TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
+    <a href="add.php"><i class="fas fa-plus"></i> Add Study</a>
+    <a href="manage.php"><i class="fas fa-tasks"></i> Manage Studies</a>
+    <a href="user.php"><i class="fas fa-users"></i> User Logs</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
 
-    <div class="content">
-        <!-- Your page content goes here -->
+    <!-- Search Form -->
+    <form action="" method="get" class="mb-3">
+        <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" class="form-control" placeholder="Search by Title, Author, or Keywords">
+        <button type="submit" class="btn btn-primary mt-2">Search</button>
+    </form>
+
+    <div class="node-container">
+        <?php if ($result->num_rows > 0): ?>
+            <?php while ($row = $result->fetch_assoc()): ?>
+                <div class="node" data-bs-toggle="modal" data-bs-target="#studyModal<?php echo $row['study_id']; ?>">
+                    <span><?php echo htmlspecialchars($row['title']); ?></span>
+                </div>
+
+                <!-- Modal -->
+                <div class="modal fade" id="studyModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="studyModalLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="studyModalLabel<?php echo $row['study_id']; ?>"><?php echo htmlspecialchars($row['title']); ?></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
+                                <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
+                                <p><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
+                                <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
+                                <p><strong>Call Number:</strong> <?php echo htmlspecialchars($row['cNumber']); ?></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <?php endwhile; ?>
+        <?php else: ?>
+            <div class="alert alert-info">No studies found for the BA course.</div>
+        <?php endif; ?>
     </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
+
+<?php $conn->close(); ?>

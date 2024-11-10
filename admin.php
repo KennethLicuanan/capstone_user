@@ -63,6 +63,15 @@ foreach ($tepTypes as $type) {
     $tepTypeCounts[$type] = $result->num_rows > 0 ? $result->fetch_assoc()['total'] : 0;
 }
 
+// Fetch studies per year
+$yearlyCounts = [];
+$query = "SELECT year, COUNT(*) as total FROM studytbl GROUP BY year";
+$result = $conn->query($query);
+while ($row = $result->fetch_assoc()) {
+    $yearlyCounts[$row['year']] = $row['total'];
+}
+
+
 $conn->close();
 ?>
 
@@ -170,6 +179,11 @@ $conn->close();
         <h3>Teachers Education Program Studies</h3>
         <canvas id="tepTypesChart"></canvas>
     </div>
+    <div class="chart-container">
+        <h3>Studies Per Year</h3>
+        <canvas id="yearlyChart" width="400" height="400"></canvas>
+    </div>
+
 </div>
 
 <script>
@@ -198,6 +212,10 @@ $conn->close();
         "Elementary Education": <?php echo $tepTypeCounts['Elementary Education']; ?>,
         "Secondary Education": <?php echo $tepTypeCounts['Secondary Education']; ?>
     };
+
+    // Pass studies per year data to JavaScript
+    const yearlyData = <?php echo json_encode($yearlyCounts); ?>;
+
 
     // Render Total Studies by Course Chart
     const ctxCourse = document.getElementById('studiesChart').getContext('2d');
@@ -330,6 +348,55 @@ $conn->close();
             }
         }
     });
+
+        // Render Studies Per Year Chart
+    const ctxYearly = document.getElementById('yearlyChart').getContext('2d');
+    new Chart(ctxYearly, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(yearlyData), // Years as labels
+            datasets: [{
+                label: 'Number of Studies',
+                data: Object.values(yearlyData), // Studies count per year
+                backgroundColor: '#36A2EB',
+                borderColor: 'black',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.dataset.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${value} studies`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Year'
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Studies'
+                    }
+                }
+            }
+        }
+    });
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
