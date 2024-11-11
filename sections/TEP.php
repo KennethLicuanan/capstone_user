@@ -144,24 +144,47 @@ $result = $conn->query($sql);
                     <span><?php echo htmlspecialchars($row['title']); ?></span>
                 </div>
 
-                <!-- Modal -->
-                <div class="modal fade" id="studyModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="studyModalLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="studyModalLabel<?php echo $row['study_id']; ?>"><?php echo htmlspecialchars($row['title']); ?></h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                            </div>
-                            <div class="modal-body">
-                                <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
-                                <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
-                                <p><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
-                                <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
-                                <p><strong>Call Number:</strong> <?php echo htmlspecialchars($row['cNumber']); ?></p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+<!-- Study Modal -->
+<div class="modal fade" id="studyModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="studyModalLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="studyModalLabel<?php echo $row['study_id']; ?>"><?php echo htmlspecialchars($row['title']); ?></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
+                <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
+                <p><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
+                <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
+                <p><strong>Call Number:</strong> <?php echo htmlspecialchars($row['cNumber']); ?></p>
+                
+                <!-- APA Citation Button -->
+                <button onclick="showCitationModal('<?php echo addslashes($row['author']); ?>', '<?php echo addslashes($row['title']); ?>', '<?php echo $row['year']; ?>')" class="btn btn-secondary mt-3">
+                    Generate APA Citation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- APA Citation Modal -->
+<div class="modal fade" id="citationModal" tabindex="-1" aria-labelledby="citationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="citationModalLabel">APA 6th Edition Citation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Copy the citation below:</p>
+                <textarea id="citationText" class="form-control" rows="3" readonly></textarea>
+                <button onclick="copyCitation()" class="btn btn-primary mt-3">Copy to Clipboard</button>
+            </div>
+        </div>
+    </div>
+</div>
+
             <?php endwhile; ?>
         <?php else: ?>
             <div class="alert alert-info">No studies found for the IT course.</div>
@@ -169,6 +192,29 @@ $result = $conn->query($sql);
     </div>
 </div>
 
+<script>
+function showCitationModal(author, title, year) {
+    // Generate the citation in APA 6th format
+    const citation = `${author} (${year}). ${title}. Digi-Studies.`;
+
+    // Set the citation text in the modal's textarea
+    document.getElementById('citationText').value = citation;
+
+    // Show the citation modal
+    const citationModal = new bootstrap.Modal(document.getElementById('citationModal'));
+    citationModal.show();
+}
+
+function copyCitation() {
+    // Select and copy the citation text
+    const citationText = document.getElementById('citationText');
+    citationText.select();
+    document.execCommand('copy');
+
+    // Notify the user that the text has been copied
+    alert('Citation copied to clipboard!');
+}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
