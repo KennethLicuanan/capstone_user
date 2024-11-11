@@ -191,6 +191,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search'])) {
         </div>
     </div>
 
+    
     <!-- Search Results -->
     <?php if (isset($searchResults) && $searchResults->num_rows > 0): ?>
         <div class="mt-4">
@@ -214,13 +215,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search'])) {
                         <tr>
                             <td><?= htmlspecialchars($row['title']) ?></td>
                             <td><?= htmlspecialchars($row['author']) ?></td>
-                            <td><?= htmlspecialchars($row['abstract']) ?></td>
+                            <td>
+                                <!-- Display truncated abstract with 'See More' toggle -->
+                                <span class="abstract-content" id="abstract-<?= $row['study_id'] ?>">
+                                    <?= htmlspecialchars(substr($row['abstract'], 0, 100)) ?>...
+                                </span>
+                                <span class="see-more" onclick="toggleAbstract(<?= $row['study_id'] ?>)">See More</span>
+                                <span class="full-abstract" id="full-abstract-<?= $row['study_id'] ?>" style="display: none;">
+                                    <?= htmlspecialchars($row['abstract']) ?>
+                                    <span class="see-more" onclick="toggleAbstract(<?= $row['study_id'] ?>)">See Less</span>
+                                </span>
+                            </td>
                             <td><?= htmlspecialchars($row['keywords']) ?></td>
                             <td><?= htmlspecialchars($row['year']) ?></td>
                             <td><?= htmlspecialchars($row['cNumber']) ?></td>
                             <td><?= htmlspecialchars($row['course']) ?></td>
                             <td><?= htmlspecialchars($row['type']) ?></td>
                             <td>
+                                <!-- Update/Delete forms -->
                                 <form action="update_study.php" method="POST" style="display:inline-block;">
                                     <input type="hidden" name="study_id" value="<?= $row['study_id'] ?>">
                                     <button type="submit" class="btn btn-primary btn-sm">Update</button>
@@ -240,6 +252,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search'])) {
     <?php endif; ?>
 </div>
 
+<script>
+        // Toggle between truncated and full abstract
+        function toggleAbstract(id) {
+        const abstractContent = document.getElementById(`abstract-${id}`);
+        const fullAbstract = document.getElementById(`full-abstract-${id}`);
+
+        if (fullAbstract.style.display === "none") {
+            abstractContent.style.display = "none";
+            fullAbstract.style.display = "inline";
+        } else {
+            abstractContent.style.display = "inline";
+            fullAbstract.style.display = "none";
+        }
+    }
+</script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>

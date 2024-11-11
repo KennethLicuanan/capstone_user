@@ -123,7 +123,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         </div>
         <a href="dashboard.php"><i class="fas fa-home"></i> Home</a>
         <a href="./sections/IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
-        <a href="./sections/BA.php"><i class="fas fa-briefcase"></i> Business sectionsistration</a>
+        <a href="./sections/BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
         <a href="./sections/TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
         <a href="add_favorite.php"><i class="fas fa-star"></i> Favorites</a>
         <a href="notification.php"><i class="fas fa-bell"></i> Notifications</a>

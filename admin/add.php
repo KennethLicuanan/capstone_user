@@ -272,7 +272,7 @@ $conn->close();
     <!-- cNumber Number field -->
     <div class="mb-3">
         <label for="cNumber" class="form-label">Call Number</label>
-        <input type="number" name="cNumber" class="form-control" id="cNumber" placeholder="Enter Call Number">
+        <input type="text" name="cNumber" class="form-control" id="cNumber" placeholder="Enter Call Number">
     </div>
 
     <!-- Course selection -->
