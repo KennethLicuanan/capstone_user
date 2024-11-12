@@ -46,11 +46,12 @@ $search = isset($_GET['search']) ? $_GET['search'] : '';
 $year = isset($_GET['year']) ? $_GET['year'] : '';
 $type = isset($_GET['type']) ? $_GET['type'] : '';
 
-// Build the base query to fetch studies for the BA course
-$query = "SELECT studytbl.*, categorytbl.type, categorytbl.course 
-          FROM studytbl 
-          LEFT JOIN categorytbl ON studytbl.study_id = categorytbl.study_id 
-          WHERE categorytbl.course = 'BA'";
+// Modified query to include the path for the approval sheet
+$query = "SELECT s.study_id, s.title, s.author, s.abstract, s.keywords, s.year, s.cNumber, u.path AS approval_sheet_path
+          FROM studytbl AS s
+          JOIN categorytbl AS c ON s.study_id = c.study_id
+          LEFT JOIN uploadtbl AS u ON c.cat_id = u.cat_id
+          WHERE c.course = 'BA'";
 
 // Apply search, year, and type filters if provided
 if (!empty($search)) {
@@ -238,6 +239,29 @@ $result = $conn->query($query);
                         <button class="btn btn-sm" onclick="addToFavorites(<?php echo $row['study_id']; ?>)">
                             <i class="fas fa-star"></i> 
                         </button>
+
+                                           <!-- View Approval Sheet Button -->
+                   <?php if (!empty($row['approval_sheet_path'])): ?>
+                        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#approvalSheetModal<?php echo $row['study_id']; ?>">
+                            View Approval Sheet
+                        </button>
+                    <?php endif; ?>
+
+                    <!-- Approval Sheet Modal -->
+                    <div class="modal fade" id="approvalSheetModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="approvalSheetLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
+                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="approvalSheetLabel<?php echo $row['study_id']; ?>">Approval Sheet</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body text-center">
+                                    <img src="<?php echo htmlspecialchars($row['approval_sheet_path']); ?>" alt="Approval Sheet" class="img-fluid">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     </div>
 
                 </li>
