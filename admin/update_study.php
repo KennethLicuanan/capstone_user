@@ -27,14 +27,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update_study'])) {
     $abstract = $_POST['abstract'];
     $keywords = $_POST['keywords'];
     $year = $_POST['year'];
+    $cNumber = $_POST['cNumber'];
 
-    $query = "UPDATE studytbl SET title = ?, author = ?, abstract = ?, keywords = ?, year = ? WHERE study_id = ?";
+    $query = "UPDATE studytbl SET title = ?, author = ?, abstract = ?, keywords = ?, year = ?, cNumber = ? WHERE study_id = ?";
     $stmt = $conn->prepare($query);
-    $stmt->bind_param("sssssi", $title, $author, $abstract, $keywords, $year, $study_id);
+    $stmt->bind_param("ssssssi", $title, $author, $abstract, $keywords, $year, $cNumber, $study_id);
 
     if ($stmt->execute()) {
         echo '<div class="alert alert-success">Study updated successfully.</div>';
-        header("Refresh: 2; URL=manage.php");
+        header("Refresh: 1; URL=manage.php");
         exit();
     } else {
         echo '<div class="alert alert-danger">Error updating study: ' . $conn->error . '</div>';
@@ -146,6 +147,11 @@ $conn->close();
         <div class="mb-3">
             <label class="form-label">Year:</label>
             <input type="text" name="year" class="form-control" value="<?= htmlspecialchars($study['year']) ?>" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Call Number:</label>
+            <input type="text" name="cNumber" class="form-control" value="<?= htmlspecialchars($study['cNumber']) ?>" required>
         </div>
 
         <div class="d-flex justify-content-between">

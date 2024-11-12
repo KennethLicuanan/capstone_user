@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Insert data into uploadtbl
                     $sqlUpload = "INSERT INTO uploadtbl (cat_id, path) VALUES ('$cat_id', '$targetFilePath')";
                     if ($conn->query($sqlUpload) === TRUE) {
-                        echo "<div class='alert alert-success'>Study added successfully with uploaded image.</div>";
+                        echo "<div class='alert alert-success'>Study added successfully.</div>";
                     } else {
                         echo "<div class='alert alert-danger'>Error inserting into uploadtbl: " . $conn->error . "</div>";
                     }
@@ -199,6 +199,89 @@ $conn->close();
             max-height: 300px; /* Set the maximum height */
             width: auto; /* Maintain aspect ratio */
         }
+
+            /* General Form Styling */
+    .content {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 2rem;
+        background-color: #f5f8fa;
+    }
+
+    .container {
+        max-width: 800px;
+        width: 100%;
+    }
+
+    .form-card {
+        background: #ffffff;
+        padding: 2rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .form-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #343a40;
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #495057;
+    }
+
+    .input-group {
+        display: flex;
+        align-items: center;
+    }
+
+    .form-control, .form-select {
+        border-radius: 5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.2s;
+    }
+
+    .form-control:focus, .form-select:focus {
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    }
+
+    /* Plus Button Styling */
+    .plus-button {
+        color: #007bff;
+        cursor: pointer;
+        margin-left: 0.5rem;
+        font-size: 1.25rem;
+    }
+
+    .plus-button:hover {
+        color: #0056b3;
+    }
+
+    /* Button Styling */
+    #addStudyButton {
+        width: 100%;
+        background-color: #28a745;
+        border: none;
+        color: #fff;
+        padding: 0.75rem;
+        font-size: 1rem;
+        font-weight: bold;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        transition: background-color 0.2s;
+    }
+
+    #addStudyButton:hover {
+        background-color: #218838;
+    }
+
+    /* Popover Styling */
+    .popover {
+        max-width: 100%;
+    }
     </style>
 </head>
 <body>
@@ -296,7 +379,7 @@ $conn->close();
 
             <!-- File Upload -->
             <div class="mb-3">
-                <label for="uploadFile" class="form-label">Upload Image</label>
+                <label for="uploadFile" class="form-label">Upload Approval Sheet</label>
                 <input type="file" name="uploadFile" id="uploadFile" class="form-control" accept="image/*" required>
             </div>
             
