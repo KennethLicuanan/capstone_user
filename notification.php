@@ -22,13 +22,13 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Function to fetch new studies added within the past week
+// Function to fetch new studies added within the past week and delete those not in the database
 function getWeeklyNotifications($conn) {
     $notifications = [];
 
     // Query to find studies added within the last 7 days
     $query = "
-        SELECT s.title, c.course
+        SELECT s.study_id, s.title, c.course
         FROM studytbl s
         JOIN categorytbl c ON s.study_id = c.study_id
         WHERE s.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
@@ -38,10 +38,22 @@ function getWeeklyNotifications($conn) {
 
     if ($result->num_rows > 0) {
         while ($row = $result->fetch_assoc()) {
-            $notifications[] = [
-                'title' => $row['title'],
-                'course' => $row['course']
-            ];
+            // Check if the study is still in the database
+            $checkQuery = "SELECT COUNT(*) as count FROM studytbl WHERE study_id = " . $row['study_id'];
+            $checkResult = $conn->query($checkQuery);
+            $checkRow = $checkResult->fetch_assoc();
+
+            if ($checkRow['count'] == 0) {
+                // Study not found in the database, delete it from notifications
+                $deleteQuery = "DELETE FROM studytbl WHERE study_id = " . $row['study_id'];
+                $conn->query($deleteQuery);
+            } else {
+                // Add valid study to notifications
+                $notifications[] = [
+                    'title' => $row['title'],
+                    'course' => $row['course']
+                ];
+            }
         }
     }
 

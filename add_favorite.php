@@ -24,37 +24,58 @@ if ($conn->connect_error) {
 // Get the user ID from the session
 $user_id = $_SESSION['user_id']; // Make sure this is set when the user logs in
 
-// Handle filtering
-$identifier = isset($_POST['identifier']) ? $_POST['identifier'] : '';
-$year = isset($_POST['year']) ? $_POST['year'] : '';
+// Handle removal from favorites
+if (isset($_GET['remove']) && isset($_GET['study_id'])) {
+    $study_id = $_GET['study_id'];
+    $sql_remove = "DELETE FROM favoritestbl WHERE user_id = ? AND study_id = ?";
+    $stmt_remove = $conn->prepare($sql_remove);
+    $stmt_remove->bind_param("ii", $user_id, $study_id);
+    if ($stmt_remove->execute()) {
+        echo "<script>alert('Study removed from favorites.'); window.location.href = 'add_favorite.php';</script>";
+    } else {
+        echo "<script>alert('Failed to remove the study.');</script>";
+    }
+    $stmt_remove->close();
+}
 
-// Fetch favorite studies based on filters for the logged-in user
+// Fetch favorite studies
 $sql = "SELECT s.study_id, s.title, s.author, s.abstract, s.keywords, s.year, s.cNumber
         FROM favoritestbl f
         JOIN studytbl s ON f.study_id = s.study_id
         WHERE f.user_id = ?";
-
-if ($identifier) {
-    $sql .= " AND s.identifier = '$identifier'";
-}
-
-if ($year) {
-    $sql .= " AND s.year = '$year'";
-}
 
 $stmt = $conn->prepare($sql);
 $stmt->bind_param("i", $user_id);
 $stmt->execute();
 $result = $stmt->get_result();
 
-// Fetch notifications
-$notificationsSql = "SELECT message FROM notifications ORDER BY created_at DESC";
-$notificationsResult = $conn->query($notificationsSql);
-$notifications = [];
 
-while ($row = $notificationsResult->fetch_assoc()) {
-    $notifications[] = $row['message'];
+// Initialize query with base SQL
+$sql = "SELECT s.study_id, s.title, s.author, s.abstract, s.keywords, s.year, s.cNumber
+        FROM favoritestbl f
+        JOIN studytbl s ON f.study_id = s.study_id
+        WHERE f.user_id = ?";
+
+// Add filter conditions based on user input
+$filters = [];
+if (!empty($_GET['course'])) {
+    $sql .= " AND c.course = ?";
+    $filters[] = $_GET['course'];
 }
+if (!empty($_GET['year'])) {
+    $sql .= " AND s.year = ?";
+    $filters[] = $_GET['year'];
+}
+if (!empty($_GET['type'])) {
+    $sql .= " AND c.type = ?";
+    $filters[] = $_GET['type'];
+}
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param(str_repeat("s", count($filters) + 1), $user_id, ...$filters);
+$stmt->execute();
+$result = $stmt->get_result();
+
 ?>
 
 <!DOCTYPE html>
@@ -67,7 +88,8 @@ while ($row = $notificationsResult->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
-            background-color: #ffffff;
+            background-color: #f4f6f9;
+            font-family: 'Arial', sans-serif;
             margin-left: 250px; /* Leave space for the sidebar */
         }
         .sidebar {
@@ -105,169 +127,146 @@ while ($row = $notificationsResult->fetch_assoc()) {
             margin-top: 20px;
         }
         .study-card {
-            margin-bottom: 30px;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+            background-color: white;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             transition: all 0.3s ease;
         }
         .study-card:hover {
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
-            transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
-        .card-title {
+        .study-card .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 18px;
             font-weight: bold;
         }
-        .see-more {
+        .study-card .card-header .study-title {
+            font-size: 20px;
+            color: #333;
+        }
+        .study-card .card-header .study-citation {
+            font-size: 16px;
+            color: #999;
             cursor: pointer;
-            color: #007bff;
-            font-weight: bold;
         }
-        .filter-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            background-color: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        .study-card .card-body {
+            font-size: 16px;
+            color: #555;
+            margin-top: 10px;
         }
+        .study-card .card-body p {
+            margin: 5px 0;
+        }
+        .study-card .remove-btn {
+            border: none;
+            background-color: transparent;
+            color: #ff6f61;
+            cursor: pointer;
+        }
+        .study-card .remove-btn:hover {
+            text-decoration: underline;
+        }
+        .study-card .keywords {
+            font-style: italic;
+            color: #888;
+        }
+        .study-card .study-details {
+            margin-top: 10px;
+        }
+        form .form-select, form .btn {
+            min-width: 150px;
+        }
+
     </style>
 </head>
 <body>
 <div class="sidebar">
-        <div class="sidebar-brand">
-            <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
+    <div class="sidebar-brand">
+        <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
+    </div>
+    <a href="dashboard.php"><i class="fas fa-home"></i> Home</a>
+    <a href="./sections/IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
+    <a href="./sections/BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
+    <a href="./sections/TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
+    <a href="add_favorite.php"><i class="fas fa-star"></i> Favorites</a>
+    <a href="notification.php"><i class="fas fa-bell"></i> Notifications</a>
+    <a href="help.php"><i class="fas fa-pencil"></i> Help</a>
+    <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<div class="container">
+<div class="container my-4">
+    <form method="GET" class="row g-3">
+        <!-- Course Filter -->
+        <div class="col-md-4">
+            <label for="course" class="form-label">Course</label>
+            <select name="course" id="course" class="form-select">
+                <option value="">All Courses</option>
+                <!-- Add other course options here -->
+                <option value="IT">IT</option>
+                <option value="BA">BA</option>
+                <option value="TEP">TEP</option>
+            </select>
         </div>
-        <a href="dashboard.php"><i class="fas fa-home"></i> Home</a>
-        <a href="./sections/IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
-        <a href="./sections/BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
-        <a href="./sections/TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
-        <a href="add_favorite.php"><i class="fas fa-star"></i> Favorites</a>
-        <a href="notification.php"><i class="fas fa-bell"></i> Notifications</a>
-        <a href="help.php"><i class="fas fa-pencil"></i> Help</a>
-        <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
-    </div>
+        
+        <!-- Year Filter -->
+        <div class="col-md-4">
+            <label for="year" class="form-label">Year</label>
+            <select name="year" id="year" class="form-select">
+                <option value="">All Years</option>
+                <!-- Add year options here -->
+                <?php for ($y = 2020; $y <= date('Y'); $y++): ?>
+                    <option value="<?php echo $y; ?>"><?php echo $y; ?></option>
+                <?php endfor; ?>
+            </select>
+        </div>
+        
+        <!-- Type Filter -->
+        <div class="col-md-4">
+            <label for="type" class="form-label">Type</label>
+            <select name="type" id="type" class="form-select">
+                <option value="">All Types</option>
+                <!-- Add other type options here -->
+                <option value="Thesis">Thesis</option>
+                <option value="Capstone">Capstone</option>
+            </select>
+        </div>
+        
+        <!-- Submit Button -->
+        <div class="col-md-12">
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </div>
+    </form>
+</div>
 
-<!-- Filter Section -->
-<section class="filter-section">
-    <div class="container">
-        <form method="POST" action="">
-            <div class="row mb-3">
-                <div class="col-md-4">
-                    <label for="identifier" class="form-label">Filter by Identifier</label>
-                    <select name="identifier" id="identifier" class="form-select">
-                        <option value="">Select Identifier</option>
-                        <option value="WEB-BASED" <?php if ($identifier === 'WEB-BASED') echo 'selected'; ?>>WEB-BASED</option>
-                        <option value="WEB-APP" <?php if ($identifier === 'WEB-APP') echo 'selected'; ?>>WEB-APP</option>
-                        <option value="MOBILE APP" <?php if ($identifier === 'MOBILE APP') echo 'selected'; ?>>MOBILE APP</option>
-                        <option value="IOT" <?php if ($identifier === 'IOT') echo 'selected'; ?>>IOT</option>
-                    </select>
+    <?php if ($result->num_rows > 0): ?>
+        <?php while ($row = $result->fetch_assoc()): ?>
+            <div class="study-card">
+                <div class="card-header">
+                    <span class="study-title"><?php echo htmlspecialchars($row['title']); ?></span>
+                    <span class="study-citation"><i class="fas fa-caret-up"></i> <?php echo htmlspecialchars($row['cNumber']); ?> <i class="fas fa-caret-down"></i></span>
                 </div>
-                <div class="col-md-4">
-                    <label for="year" class="form-label">Filter by Year</label>
-                    <select name="year" id="year" class="form-select">
-                        <option value="">Select Year</option>
-                        <?php
-                        // Fetch distinct years from the studiestbl
-                        $yearSql = "SELECT DISTINCT year FROM studiestbl ORDER BY year DESC";
-                        $yearResult = $conn->query($yearSql);
-                        while ($yearRow = $yearResult->fetch_assoc()) {
-                            echo '<option value="' . $yearRow['year'] . '"' . ($year == $yearRow['year'] ? ' selected' : '') . '>' . $yearRow['year'] . '</option>';
-                        }
-                        ?>
-                    </select>
-                </div>
-                <div class="col-md-4 d-flex align-items-end">
-                    <button type="submit" class="btn btn-primary">Filter</button>
-                </div>
-            </div>
-        </form>
-    </div>
-</section>
-
-<!-- Favorite Studies Section -->
-<div class="container mt-4">
-    <h2>Your Favorite Studies</h2>
-    <div class="row">
-        <?php
-        if ($result->num_rows > 0) {
-            while ($row = $result->fetch_assoc()) {
-                $abstract = htmlspecialchars($row['abstract']);
-                $shortAbstract = (strlen($abstract) > 100) ? substr($abstract, 0, 100) . '...' : $abstract;
-                ?>
-                <div class="col-md-4">
-                    <div class="card study-card">
-                        <div class="card-body">
-                            <h5 class="card-title"><?php echo htmlspecialchars($row['title']); ?></h5>
-                            <h6 class="card-subtitle mb-2 text-muted">by <?php echo htmlspecialchars($row['author']); ?></h6>
-                            <p class="card-text">
-                                <span class="short-abstract"><?php echo $shortAbstract; ?></span>
-                                <span class="see-more" data-abstract="<?php echo $abstract; ?>">See More</span>
-                            </p>
-                            <p class="card-text"><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
-                            <p class="card-text"><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
-                        </div>
+                <div class="card-body">
+                    <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
+                    <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
+                    <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
+                    <p><strong>Keywords:</strong> <span class="keywords"><?php echo htmlspecialchars($row['keywords']); ?></span></p>
+                    <div class="study-details">
+                        <a href="?remove=true&study_id=<?php echo $row['study_id']; ?>" class="btn btn-outline-warning btn-sm remove-btn">
+                            <i class="fas fa-star"></i> Remove from Favorites
+                        </a>
                     </div>
                 </div>
-                <?php
-            }
-        } else {
-            echo "<p>No favorite studies found.</p>";
-        }
-        ?>
-    </div>
-</div>
-
-<!-- Modal Structure -->
-<div class="modal fade" id="abstractModal" tabindex="-1" aria-labelledby="abstractModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="abstractModalLabel">Full Abstract</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body" id="modalAbstractBody"></div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
+        <?php endwhile; ?>
+    <?php else: ?>
+        <p>No favorite studies found.</p>
+    <?php endif; ?>
 </div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function() {
-        // Open modal and set full abstract
-        $('.see-more').on('click', function() {
-            var fullAbstract = $(this).data('abstract');
-            $('#modalAbstractBody').text(fullAbstract);
-            $('#abstractModal').modal('show');
-        });
-    });
-</script>
-
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    // See More functionality
-    $(document).ready(function() {
-        $('.see-more').on('click', function() {
-            var shortAbstract = $(this).siblings('.short-abstract');
-            var fullAbstract = $(this).siblings('.full-abstract');
-
-            if (shortAbstract.is(':visible')) {
-                shortAbstract.hide();  // Hide short abstract
-                fullAbstract.show();   // Show full abstract
-                $(this).text('See Less'); // Change button text to "See Less"
-            } else {
-                fullAbstract.hide();    // Hide full abstract
-                shortAbstract.show();   // Show short abstract
-                $(this).text('See More'); // Change button text to "See More"
-            }
-        });
-
-        // Initially hide all full abstracts
-        $('.full-abstract').hide();
-    });
-</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

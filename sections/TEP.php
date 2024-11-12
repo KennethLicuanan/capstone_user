@@ -29,17 +29,42 @@ if ($conn->connect_error) {
 $search = isset($_GET['search']) ? $_GET['search'] : '';
 
 // Query to get all IT studies
-$sql = "SELECT s.study_id, s.title, s.author, s.abstract, s.keywords, s.year, s.cNumber 
+$sql = "SELECT s.study_id, s.title, s.author, s.abstract, s.keywords, s.year, s.cNumber
         FROM studytbl AS s
         JOIN categorytbl AS c ON s.study_id = c.study_id
         WHERE c.course = 'TEP'";
 
-                // Add search conditions if there is a search query
+
+// Add search conditions if there is a search query
 if ($search) {
     $sql .= " AND (s.title LIKE '%$search%' OR s.author LIKE '%$search%' OR s.keywords LIKE '%$search%')";
 }
 
-$result = $conn->query($sql);
+
+// Fetch filter values from the URL
+$search = isset($_GET['search']) ? $_GET['search'] : '';
+$year = isset($_GET['year']) ? $_GET['year'] : '';
+$type = isset($_GET['type']) ? $_GET['type'] : '';
+
+// Build the base query to fetch studies for the BA course
+$query = "SELECT studytbl.*, categorytbl.type, categorytbl.course 
+          FROM studytbl 
+          LEFT JOIN categorytbl ON studytbl.study_id = categorytbl.study_id 
+          WHERE categorytbl.course = 'TEP'";
+
+// Apply search, year, and type filters if provided
+if (!empty($search)) {
+    $query .= " AND (studytbl.title LIKE '%$search%' OR studytbl.author LIKE '%$search%' OR studytbl.keywords LIKE '%$search%')";
+}
+if (!empty($year)) {
+    $query .= " AND studytbl.year = '$year'";
+}
+if (!empty($type)) {
+    $query .= " AND categorytbl.type = '$type'";
+}
+
+
+$result = $conn->query($query);
 ?>
 
 <!DOCTYPE html>
@@ -86,32 +111,34 @@ $result = $conn->query($sql);
         .sidebar .sidebar-brand img {
             border-radius: 50%;
         }
+
         .content {
             padding: 20px;
             margin-top: 20px;
         }
-        .node-container {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 30px;
-            margin-top: 30px;
+        .study-item {
+            border-bottom: 1px solid #ddd;
+            padding: 15px 0;
+            font-family: Arial, sans-serif;
         }
-        .node {
-            width: 150px;
-            height: 150px;
-            background-color: #6c757d;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 14px;
-            text-align: center;
+        .study-title {
+            font-size: 18px;
+            color: #0066cc;
             cursor: pointer;
+            text-decoration: underline;
         }
-        .node:hover {
-            background-color: #343a40;
+        .study-author-year {
+            color: #555;
+            font-size: 14px;
+        }
+        .study-abstract {
+            margin-top: 5px;
+            color: #333;
+        }
+        .cite-button {
+            font-size: 14px;
+            color: #0066cc;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -119,8 +146,8 @@ $result = $conn->query($sql);
 
 <div class="sidebar">
     <div class="sidebar-brand">
-            <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
-        </div>
+        <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
+    </div>
     <a href="../dashboard.php"><i class="fas fa-home"></i> Home</a>
     <a href="IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
     <a href="BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
@@ -131,99 +158,200 @@ $result = $conn->query($sql);
     <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
 </div>
 
+<div class="content">
     <!-- Search Form -->
-    <form action="" method="get" class="mb-3">
-        <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" class="form-control" placeholder="Search by Title, Author, or Keywords">
-        <button type="submit" class="btn btn-primary mt-2">Search</button>
-    </form>
+    <form action="" method="get" class="mb-3 d-flex align-items-center" id="searchForm">
+    <!-- Search Input -->
+    <input type="text" name="search" value="<?php echo htmlspecialchars($search); ?>" class="form-control" placeholder="Search">
     
-    <div class="node-container">
+    <!-- Search Icon -->
+    <span class="ms-2" style="cursor: pointer;" onclick="document.getElementById('searchForm').submit();">
+        <i class="fas fa-search"></i>
+    </span>
+
+    <!-- Year Dropdown with Burger Icon -->
+    <div class="btn-group ms-3">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <select name="year" class="form-control" onchange="this.form.submit()">
+                    <option value="">Select Year</option>
+                    <?php
+                    $yearQuery = "SELECT DISTINCT year FROM studytbl ORDER BY year DESC";
+                    $yearResult = $conn->query($yearQuery);
+                    while ($yearRow = $yearResult->fetch_assoc()) {
+                        $selected = ($year == $yearRow['year']) ? 'selected' : '';
+                        echo "<option value='{$yearRow['year']}' $selected>{$yearRow['year']}</option>";
+                    }
+                    ?>
+                </select>
+            </li>
+        </ul>
+    </div>
+
+    <!-- Type Dropdown with Burger Icon -->
+    <div class="btn-group ms-3">
+        <button type="button" class="btn btn-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fas fa-bars"></i>
+        </button>
+        <ul class="dropdown-menu">
+            <li>
+                <select name="type" class="form-control" onchange="this.form.submit()">
+                    <option value="">Select Type</option>
+                    <?php
+                    $typeQuery = "SELECT DISTINCT type FROM categorytbl WHERE course = 'TEP' ORDER BY type";
+                    $typeResult = $conn->query($typeQuery);
+                    while ($typeRow = $typeResult->fetch_assoc()) {
+                        $selected = ($type == $typeRow['type']) ? 'selected' : '';
+                        echo "<option value='{$typeRow['type']}' $selected>{$typeRow['type']}</option>";
+                    }
+                    ?>
+                </select>
+            </li>
+        </ul>
+    </div>
+</form>
+
+
+    <!-- Study List -->
+    <ul class="study-list list-unstyled">
         <?php if ($result->num_rows > 0): ?>
             <?php while ($row = $result->fetch_assoc()): ?>
-                <div class="node" data-bs-toggle="modal" data-bs-target="#studyModal<?php echo $row['study_id']; ?>">
-                    <span><?php echo htmlspecialchars($row['title']); ?></span>
+                <li class="study-item">
+                    <a class="study-title" data-bs-toggle="modal" data-bs-target="#studyModal<?php echo $row['study_id']; ?>">
+                        <?php echo htmlspecialchars($row['title']); ?>
+                    </a>
+                    <div class="study-author-year">
+                        <?php echo htmlspecialchars($row['author']); ?> - <?php echo htmlspecialchars($row['year']); ?>
+                    </div>
+                    <div class="study-abstract">
+                        <?php echo htmlspecialchars(substr($row['abstract'], 0, 150)) . '...'; ?>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="cite-button me-3" onclick="showCitationModal('<?php echo htmlspecialchars($row['author']); ?>', '<?php echo htmlspecialchars($row['title']); ?>', '<?php echo htmlspecialchars($row['year']); ?>')">
+                            Cite
+                        </div>
+
+                        <!-- Add to Favorites Button -->
+                        <button class="btn btn-sm" onclick="addToFavorites(<?php echo $row['study_id']; ?>)">
+                            <i class="fas fa-star"></i> 
+                        </button>
+                    </div>
+
+                </li>
+
+                <!-- Study Modal -->
+                <div class="modal fade" id="studyModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="studyModalLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="studyModalLabel<?php echo $row['study_id']; ?>"><?php echo htmlspecialchars($row['title']); ?></h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
+                                <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
+                                <p><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
+                                <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
+                                <p><strong>Call Number:</strong> <?php echo htmlspecialchars($row['cNumber']); ?></p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-<!-- Study Modal -->
-<div class="modal fade" id="studyModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="studyModalLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="studyModalLabel<?php echo $row['study_id']; ?>"><?php echo htmlspecialchars($row['title']); ?></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
-                <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
-                <p><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
-                <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
-                <p><strong>Call Number:</strong> <?php echo htmlspecialchars($row['cNumber']); ?></p>
-                
-                <!-- APA Citation Button -->
-                <button onclick="showCitationModal('<?php echo addslashes($row['author']); ?>', '<?php echo addslashes($row['title']); ?>', '<?php echo $row['year']; ?>')" class="btn btn-secondary mt-3">
-                    Generate APA Citation
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- APA Citation Modal -->
-<div class="modal fade" id="citationModal" tabindex="-1" aria-labelledby="citationModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="citationModalLabel">APA 6th Edition Citation</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p>Copy the citation below:</p>
-                <textarea id="citationText" class="form-control" rows="3" readonly></textarea>
-                <button onclick="copyCitation()" class="btn btn-primary mt-3">Copy to Clipboard</button>
-                
-                <!-- Disclaimer notice -->
-                <p class="mt-3" style="font-size: 0.85em; color: red; font-style: italic;">
-                    Disclaimer: Ensure that the citation is properly formatted and properly attributed to avoid plagiarism. This citation is generated automatically, but it is your responsibility to verify its accuracy and proper use.
-                </p>
-                <p class="mt-3" style="font-size: 0.85em; color: red; font-style: italic;">
-                    In accordance with <strong>Republic Act No. 8293</strong> (The Intellectual Property Code of the Philippines), plagiarism is a violation of intellectual property rights and may result in legal consequences. Always ensure proper attribution and citation to respect intellectual property laws.
-                </p>
-            </div>
-        </div>
-    </div>
-</div>
-
-
             <?php endwhile; ?>
         <?php else: ?>
-            <div class="alert alert-info">No studies found for the IT course.</div>
+            <div class="alert alert-info">No studies found for the BA course.</div>
         <?php endif; ?>
-    </div>
+    </ul>
 </div>
+       <!-- Citation Modal -->
+       <div class="modal fade" id="citationModal" tabindex="-1" aria-labelledby="citationModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="citationModalLabel">Citation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <textarea id="citationText" class="form-control" rows="3" readonly></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" onclick="copyCitation()">Copy Citation</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<script>
+    <script>
+        function toSentenceCase(text) {
+    return text.toLowerCase().replace(/(^\w{1}|\.\s*\w{1})/gi, letter => letter.toUpperCase());
+}
+
 function showCitationModal(author, title, year) {
-    // Generate the citation in APA 6th format
-    const citation = `${author} (${year}). ${title}. Digi-Studies.`;
-
-    // Set the citation text in the modal's textarea
+    // Convert the title to sentence case for APA 7th edition
+    const sentenceCaseTitle = toSentenceCase(title);
+    
+    // Generate the citation in APA 7th edition format with sentence case and additional text
+    const citation = `${author} (${year}). ${sentenceCaseTitle}. *Unpublished undergrad thesis [ Northern Bukidnon State College ] Digi-Studies*.`;
+    
+    // Set the citation text in the textarea
     document.getElementById('citationText').value = citation;
-
+    
     // Show the citation modal
     const citationModal = new bootstrap.Modal(document.getElementById('citationModal'));
     citationModal.show();
 }
 
 function copyCitation() {
-    // Select and copy the citation text
+    // Copy the citation text to clipboard
     const citationText = document.getElementById('citationText');
     citationText.select();
     document.execCommand('copy');
 
-    // Notify the user that the text has been copied
+    // Notify the user
     alert('Citation copied to clipboard!');
 }
-</script>
+
+function addToFavorites(study_id) {
+    const user_id = <?php echo $_SESSION['user_id']; ?>;
+
+    // Create an AJAX request to check if the study is already in favorites
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'check_favorite.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            const response = xhr.responseText;
+            if (response == 'exists') {
+                alert('This study is already in your favorites!');
+            } else {
+                // Proceed to add to favorites
+                addToFavoritesAction(study_id, user_id);
+            }
+        }
+    };
+    xhr.send('user_id=' + user_id + '&study_id=' + study_id);
+}
+
+function addToFavoritesAction(study_id, user_id) {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'add_to_favorites.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+    xhr.onreadystatechange = function () {
+        if (xhr.readyState == 4 && xhr.status == 200) {
+            alert('Study added to your favorites!');
+        }
+    };
+    xhr.send('user_id=' + user_id + '&study_id=' + study_id);
+}
+
+
+
+    </script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
