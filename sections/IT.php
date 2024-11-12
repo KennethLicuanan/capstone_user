@@ -39,6 +39,8 @@ if ($search) {
     $sql .= " AND (s.title LIKE '%$search%' OR s.author LIKE '%$search%' OR s.keywords LIKE '%$search%')";
 }
 
+
+
 $result = $conn->query($sql);
 ?>
 
@@ -144,29 +146,29 @@ $result = $conn->query($sql);
                     <span><?php echo htmlspecialchars($row['title']); ?></span>
                 </div>
 
-<!-- Study Modal -->
-<div class="modal fade" id="studyModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="studyModalLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="studyModalLabel<?php echo $row['study_id']; ?>"><?php echo htmlspecialchars($row['title']); ?></h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
-                <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
-                <p><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
-                <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
-                <p><strong>Call Number:</strong> <?php echo htmlspecialchars($row['cNumber']); ?></p>
-                
-                <!-- APA Citation Button -->
-                <button onclick="showCitationModal('<?php echo addslashes($row['author']); ?>', '<?php echo addslashes($row['title']); ?>', '<?php echo $row['year']; ?>')" class="btn btn-secondary mt-3">
-                    Generate APA Citation
-                </button>
+        <!-- Study Modal -->
+        <div class="modal fade" id="studyModal<?php echo $row['study_id']; ?>" tabindex="-1" aria-labelledby="studyModalLabel<?php echo $row['study_id']; ?>" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="studyModalLabel<?php echo $row['study_id']; ?>"><?php echo htmlspecialchars($row['title']); ?></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>Author:</strong> <?php echo htmlspecialchars($row['author']); ?></p>
+                        <p><strong>Abstract:</strong> <?php echo htmlspecialchars($row['abstract']); ?></p>
+                        <p><strong>Keywords:</strong> <?php echo htmlspecialchars($row['keywords']); ?></p>
+                        <p><strong>Year:</strong> <?php echo htmlspecialchars($row['year']); ?></p>
+                        <p><strong>Call Number:</strong> <?php echo htmlspecialchars($row['cNumber']); ?></p>
+                        
+                        <!-- APA Citation Button -->
+                        <button onclick="showCitationModal('<?php echo addslashes($row['author']); ?>', '<?php echo addslashes($row['title']); ?>', '<?php echo $row['year']; ?>')" class="btn btn-secondary mt-3">
+                            Generate APA Citation
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-</div>
 
 <!-- APA Citation Modal -->
 <div class="modal fade" id="citationModal" tabindex="-1" aria-labelledby="citationModalLabel" aria-hidden="true">
@@ -180,10 +182,19 @@ $result = $conn->query($sql);
                 <p>Copy the citation below:</p>
                 <textarea id="citationText" class="form-control" rows="3" readonly></textarea>
                 <button onclick="copyCitation()" class="btn btn-primary mt-3">Copy to Clipboard</button>
+                
+                <!-- Disclaimer notice -->
+                <p class="mt-3" style="font-size: 0.85em; color: red; font-style: italic;">
+                    Disclaimer: Ensure that the citation is properly formatted and properly attributed to avoid plagiarism. This citation is generated automatically, but it is your responsibility to verify its accuracy and proper use.
+                </p>
+                <p class="mt-3" style="font-size: 0.85em; color: red; font-style: italic;">
+                    In accordance with <strong>Republic Act No. 8293</strong> (The Intellectual Property Code of the Philippines), plagiarism is a violation of intellectual property rights and may result in legal consequences. Always ensure proper attribution and citation to respect intellectual property laws.
+                </p>
             </div>
         </div>
     </div>
 </div>
+
 
             <?php endwhile; ?>
         <?php else: ?>
@@ -214,6 +225,29 @@ function copyCitation() {
     // Notify the user that the text has been copied
     alert('Citation copied to clipboard!');
 }
+
+
+function addToFavorites(study_id) {
+    // Create a request to add the study to favorites
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', 'add_favorite.php', true);
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+    // Send the study_id to the server
+    xhr.send('study_id=' + study_id);
+
+    // Handle the response
+    xhr.onload = function () {
+        if (xhr.status == 200) {
+            alert(xhr.responseText);  // Show the response from the server (e.g., success or error message)
+        } else {
+            alert('Error adding to favorites');
+        }
+    };
+}
+
+
+
 </script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

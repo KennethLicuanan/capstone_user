@@ -180,10 +180,19 @@ $result = $conn->query($sql);
                 <p>Copy the citation below:</p>
                 <textarea id="citationText" class="form-control" rows="3" readonly></textarea>
                 <button onclick="copyCitation()" class="btn btn-primary mt-3">Copy to Clipboard</button>
+                
+                <!-- Disclaimer notice -->
+                <p class="mt-3" style="font-size: 0.85em; color: red; font-style: italic;">
+                    Disclaimer: Ensure that the citation is properly formatted and properly attributed to avoid plagiarism. This citation is generated automatically, but it is your responsibility to verify its accuracy and proper use.
+                </p>
+                <p class="mt-3" style="font-size: 0.85em; color: red; font-style: italic;">
+                    In accordance with <strong>Republic Act No. 8293</strong> (The Intellectual Property Code of the Philippines), plagiarism is a violation of intellectual property rights and may result in legal consequences. Always ensure proper attribution and citation to respect intellectual property laws.
+                </p>
             </div>
         </div>
     </div>
 </div>
+
 
             <?php endwhile; ?>
         <?php else: ?>
