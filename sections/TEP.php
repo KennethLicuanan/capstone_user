@@ -55,17 +55,17 @@ $query = "SELECT s.study_id, s.title, s.author, s.abstract, s.keywords, s.year, 
 
 // Apply search, year, and type filters if provided
 if (!empty($search)) {
-    $query .= " AND (studytbl.title LIKE '%$search%' OR studytbl.author LIKE '%$search%' OR studytbl.keywords LIKE '%$search%')";
+    $query .= " AND (s.title LIKE '%$search%' OR s.author LIKE '%$search%' OR s.keywords LIKE '%$search%')";
 }
 if (!empty($year)) {
-    $query .= " AND studytbl.year = '$year'";
+    $query .= " AND s.year = '$year'";
 }
 if (!empty($type)) {
-    $query .= " AND categorytbl.type = '$type'";
+    $query .= " AND c.type = '$type'";
 }
 
-
 $result = $conn->query($query);
+
 ?>
 
 <!DOCTYPE html>
