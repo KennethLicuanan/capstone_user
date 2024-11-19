@@ -7,6 +7,12 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit();
 }
 
+// Display any session message
+if (isset($_SESSION['message'])) {
+    echo $_SESSION['message'];
+    unset($_SESSION['message']);
+}
+
 // Ensure user_id is set in the session
 if (!isset($_SESSION['user_id'])) {
     echo '<div class="alert alert-danger">User ID not found. Please log in again.</div>';
@@ -27,75 +33,23 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Function to fetch studies by course
-function fetchStudiesByCourse($conn, $course) {
-    $query = "SELECT studytbl.study_id, studytbl.title, studytbl.author, studytbl.abstract, studytbl.keywords, studytbl.year, categorytbl.type 
+// Initialize search results to null to clear previous results
+$searchResults = null;
+
+// Fetch studies based on search input (course or type)
+function fetchStudiesBySearch($conn, $searchTerm) {
+    $query = "SELECT studytbl.study_id, studytbl.title, studytbl.author, studytbl.abstract, studytbl.keywords, studytbl.year, studytbl.cNumber, categorytbl.course, categorytbl.type 
               FROM studytbl 
               INNER JOIN categorytbl ON studytbl.study_id = categorytbl.study_id 
-              WHERE categorytbl.course = '$course'";
+              WHERE categorytbl.course LIKE '%$searchTerm%' OR categorytbl.type LIKE '%$searchTerm%'";
     $result = $conn->query($query);
     return $result;
 }
 
-// Fetch studies for each course
-$itStudies = fetchStudiesByCourse($conn, 'IT');
-$baStudies = fetchStudiesByCourse($conn, 'BA');
-$tepStudies = fetchStudiesByCourse($conn, 'TEP');
-
-// Handle update request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['update'])) {
-    $study_id = $_POST['study_id'];
-    $title = $_POST['title'];
-    $author = $_POST['author'];
-    $year = $_POST['year'];
-    $abstract = $_POST['abstract'];
-    $keywords = $_POST['keywords'];
-
-    $sql = "UPDATE studytbl SET title = ?, author = ?, year = ?, abstract = ?, keywords = ? WHERE study_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sssssi", $title, $author, $year, $abstract, $keywords, $study_id);
-    if ($stmt->execute()) {
-        echo '<div class="alert alert-success">Study updated successfully.</div>';
-    } else {
-        echo '<div class="alert alert-danger">Error updating study: ' . $stmt->error . '</div>';
-    }
-    $stmt->close();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search'])) {
+    $searchTerm = $_POST['search_term'];
+    $searchResults = fetchStudiesBySearch($conn, $searchTerm);
 }
-
-// Handle delete request
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
-    $study_id = $_POST['study_id'];
-
-    // Start a transaction
-    $conn->begin_transaction();
-
-    try {
-        // Delete from categorytbl
-        $sqlCategory = "DELETE FROM categorytbl WHERE study_id = ?";
-        $stmtCategory = $conn->prepare($sqlCategory);
-        $stmtCategory->bind_param("i", $study_id);
-        $stmtCategory->execute();
-        $stmtCategory->close();
-
-        // Delete from studytbl
-        $sqlStudy = "DELETE FROM studytbl WHERE study_id = ?";
-        $stmtStudy = $conn->prepare($sqlStudy);
-        $stmtStudy->bind_param("i", $study_id);
-        $stmtStudy->execute();
-        $stmtStudy->close();
-
-        // Commit transaction
-        $conn->commit();
-        echo '<div class="alert alert-success">Study deleted successfully from both tables.</div>';
-
-    } catch (Exception $e) {
-        // Rollback transaction if any query fails
-        $conn->rollback();
-        echo '<div class="alert alert-danger">Error deleting study: ' . $e->getMessage() . '</div>';
-    }
-}
-
-
 ?>
 
 <!DOCTYPE html>
@@ -105,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Digi-Studies</title>
     <link rel="stylesheet" href="../admin.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
         body {
@@ -117,12 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
             width: 250px;
             position: fixed;
             top: 0;
-            text-align: start;
             left: 0;
-            background-color: #343a40;
-            padding-top: 20px;
-            overflow-x: hidden;
             background-color: darkblue;
+            padding-top: 20px;
             font-weight: bold;
             font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
         }
@@ -145,36 +96,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
         .sidebar .sidebar-brand img {
             border-radius: 50%;
         }
-
-
         .content {
-        padding: 20px;
+            padding: 20px;
         }
         .content h2 {
             font-weight: bold;
             color: #007bff;
             margin-bottom: 20px;
         }
-        
-        /* Course Section Header */
-        .course-section h3 {
-            background-color: #007bff;
-            color: #ffffff;
-            padding: 10px;
-            border-radius: 5px;
-            margin-top: 30px;
-            font-size: 1.5rem;
-        }
-        
-        /* Search Bar Styling */
         .course-section input[type="text"] {
             margin-bottom: 15px;
             border-radius: 5px;
-            border: 1px solid #ced4da;
             padding: 10px;
         }
-        
-        /* Study Card Styling */
         .study-card {
             margin-bottom: 20px;
         }
@@ -187,88 +121,154 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete'])) {
             transform: translateY(-5px);
             box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
         }
-        
-        /* Card Title and Author */
-        .study-card .card-title {
-            color: #007bff;
-            font-weight: bold;
-        }
-        .study-card .card-subtitle {
-            color: #6c757d;
-            font-size: 0.9rem;
-        }
-        
-        /* Abstract and Keywords Styling */
-        .study-card .card-text {
-            color: #4b4b4b;
-        }
-        .study-card .btn-link {
-            color: #007bff;
-            text-decoration: none;
-            font-weight: bold;
-        }
-        .study-card .btn-link:hover {
-            text-decoration: underline;
-        }
     </style>
 </head>
 <body>
 
 <div class="sidebar">
-        <div class="sidebar-brand">
-            <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
+    <div class="sidebar-brand">
+        <img src="imgs/logo.jpg" height="50" alt="Digi-Studies"> Digi - Studies
+    </div>
+    <a href="../admin.php"><i class="fas fa-home"></i> Home</a>
+    <a href="IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
+    <a href="BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
+    <a href="TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
+    <a href="add.php"><i class="fas fa-plus"></i> Add Study</a>
+    <a href="manage.php"><i class="fas fa-tasks"></i> Manage Studies</a>
+    <a href="user.php"><i class="fas fa-users"></i> User Logs</a>
+    <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+</div>
+
+<div class="content">
+    <h2>Welcome to Digi-Studies</h2>
+
+    <div class="row">
+        <!-- Search Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Search Studies</h5>
+                    <p class="card-text">Find studies by course or type.</p>
+                    <!-- Search Button to Trigger Modal -->
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#searchModal">
+                        Search
+                    </button>
+                </div>
+            </div>
         </div>
-        <a href="../admin.php"><i class="fas fa-home"></i> Home</a>
-        <a href="IT.php"><i class="fas fa-laptop"></i> College of Computer Studies</a>
-        <a href="BA.php"><i class="fas fa-briefcase"></i> Business Administration</a>
-        <a href="TEP.php"><i class="fas fa-chalkboard-teacher"></i> Teachers Education Program</a>
-        <a href="add.php"><i class="fas fa-plus"></i> Add Study</a>
-        <a href="manage.php"><i class="fas fa-tasks"></i> Manage Studies</a>
-        <a href="user.php"><i class="fas fa-users"></i> User Logs</a>
-        <a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+
+        <!-- Archived Studies Card -->
+        <div class="col-md-6 mb-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5 class="card-title">Archived Studies</h5>
+                    <p class="card-text">Access archived studies.</p>
+                    <!-- Navigate to Archive Page -->
+                    <a href="archives.php" class="btn btn-secondary">Go to Archived Studies</a>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="content">
+    <!-- Search Modal -->
+    <div class="modal fade" id="searchModal" tabindex="-1" aria-labelledby="searchModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="searchModalLabel">Search Studies</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Search Form inside Modal -->
+                    <form method="post">
+                        <div class="form-group">
+                            <input type="text" name="search_term" class="form-control" placeholder="Search Course or Type here">
+                        </div>
+                        <button type="submit" name="search" class="btn btn-primary mt-3">Search</button>
+                    </form>
+                </div>
+            </div>
+        </div>
     </div>
+
+    
+    <!-- Search Results -->
+    <?php if (isset($searchResults) && $searchResults->num_rows > 0): ?>
+        <div class="mt-4">
+            <h5>Search Results</h5>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Abstract</th>
+                        <th>Keywords</th>
+                        <th>Year</th>
+                        <th>Call Number</th>
+                        <th>Course</th>
+                        <th>Type</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php while ($row = $searchResults->fetch_assoc()): ?>
+                        <tr>
+                            <td><?= htmlspecialchars($row['title']) ?></td>
+                            <td><?= htmlspecialchars($row['author']) ?></td>
+                            <td>
+                                <!-- Display truncated abstract with 'See More' toggle -->
+                                <span class="abstract-content" id="abstract-<?= $row['study_id'] ?>">
+                                    <?= htmlspecialchars(substr($row['abstract'], 0, 100)) ?>...
+                                </span>
+                                <span class="see-more" onclick="toggleAbstract(<?= $row['study_id'] ?>)">See More</span>
+                                <span class="full-abstract" id="full-abstract-<?= $row['study_id'] ?>" style="display: none;">
+                                    <?= htmlspecialchars($row['abstract']) ?>
+                                    <span class="see-more" onclick="toggleAbstract(<?= $row['study_id'] ?>)">See Less</span>
+                                </span>
+                            </td>
+                            <td><?= htmlspecialchars($row['keywords']) ?></td>
+                            <td><?= htmlspecialchars($row['year']) ?></td>
+                            <td><?= htmlspecialchars($row['cNumber']) ?></td>
+                            <td><?= htmlspecialchars($row['course']) ?></td>
+                            <td><?= htmlspecialchars($row['type']) ?></td>
+                            <td>
+                                <!-- Update/Delete forms -->
+                                <form action="update_study.php" method="POST" style="display:inline-block;">
+                                    <input type="hidden" name="study_id" value="<?= $row['study_id'] ?>">
+                                    <button type="submit" class="btn btn-primary btn-sm">Update</button>
+                                </form>
+                                <form action="delete_study.php" method="POST" style="display:inline-block;">
+                                    <input type="hidden" name="study_id" value="<?= $row['study_id'] ?>">
+                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                </form>
+                            </td>
+                        </tr>
+                    <?php endwhile; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['search'])): ?>
+        <div class="alert alert-info mt-4">No results found.</div>
+    <?php endif; ?>
+</div>
 
 <script>
+        // Toggle between truncated and full abstract
+        function toggleAbstract(id) {
+        const abstractContent = document.getElementById(`abstract-${id}`);
+        const fullAbstract = document.getElementById(`full-abstract-${id}`);
 
-    function openEditModal(study_id, title, author, year, abstract, keywords) {
-            document.getElementById('edit_study_id').value = study_id;
-            document.getElementById('edit_title').value = title;
-            document.getElementById('edit_author').value = author;
-            document.getElementById('edit_year').value = year;
-            document.getElementById('edit_abstract').value = abstract;
-            document.getElementById('edit_keywords').value = keywords;
-
-            // Show the modal
-            $('#editStudyModal').modal('show');
-        }
-    function filterStudies(course) {
-        var input, filter, table, rows, cells, i, j, match;
-        input = document.querySelector("input[placeholder='Search " + course + " Studies']");
-        filter = input.value.toLowerCase();
-        table = document.querySelector(".course-section." + course + " table");
-        rows = table.getElementsByTagName("tr");
-
-        for (i = 1; i < rows.length; i++) {
-            rows[i].style.display = "none";
-            cells = rows[i].getElementsByTagName("td");
-            match = false;
-
-            for (j = 0; j < cells.length - 1; j++) {
-                if (cells[j].innerText.toLowerCase().includes(filter)) {
-                    match = true;
-                    break;
-                }
-            }
-
-            if (match) {
-                rows[i].style.display = "";
-            }
+        if (fullAbstract.style.display === "none") {
+            abstractContent.style.display = "none";
+            fullAbstract.style.display = "inline";
+        } else {
+            abstractContent.style.display = "inline";
+            fullAbstract.style.display = "none";
         }
     }
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
 </body>
 </html>
+
+<?php $conn->close(); ?>
